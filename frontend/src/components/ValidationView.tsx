@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
+  Flame,
   CheckCircle2, 
   XCircle, 
   AlertTriangle, 
@@ -67,8 +68,10 @@ export const ValidationView: React.FC = () => {
       {/* Header */}
       <div className="glass-panel p-5 rounded-2xl border border-cyan-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
+          <div className="flex items-center space-x-2.5">
+            <div className="relative flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500/20 via-cyan-500/20 to-blue-600/20 border border-cyan-500/30 shrink-0">
+              <Flame className="w-4 h-4 text-orange-400" />
+            </div>
             <h2 className="text-xl font-bold text-white font-mono uppercase">
               Scientific Validation & Defensibility Suite
             </h2>

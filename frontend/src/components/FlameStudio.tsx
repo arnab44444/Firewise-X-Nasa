@@ -243,8 +243,10 @@ export const FlameStudio: React.FC<FlameStudioProps> = ({ videos, initialTestId 
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 glass-panel p-3.5 sm:p-4 rounded-xl border border-cyan-500/20">
         <div>
-          <h2 className="text-lg sm:text-xl font-bold text-white flex items-center space-x-2">
-            <Flame className="w-5 h-5 text-orange-400 shrink-0" />
+          <h2 className="text-lg sm:text-xl font-bold text-white flex items-center space-x-2.5">
+            <div className="relative flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500/20 via-cyan-500/20 to-blue-600/20 border border-cyan-500/30 shrink-0">
+              <Flame className="w-4 h-4 text-orange-400" />
+            </div>
             <span>Flame Analysis Studio</span>
           </h2>
           <p className="text-xs text-slate-400">

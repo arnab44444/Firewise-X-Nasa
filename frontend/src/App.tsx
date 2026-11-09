@@ -15,6 +15,19 @@ export const App: React.FC = () => {
   const [videos, setVideos] = useState<VideoInfo[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Dynamic document title matching active tab with Firewise-X brand
+  useEffect(() => {
+    const titles: Record<string, string> = {
+      'overview': 'Overview | FIREWISE-X — NASA PSI-25',
+      'flame-studio': 'Flame Studio | FIREWISE-X — NASA PSI-25',
+      'assessment': 'Pre-Mission Assessment | FIREWISE-X — NASA PSI-25',
+      'astronaut-ai': 'Astronaut AI | FIREWISE-X — NASA PSI-25',
+      'reports': 'Research Reports | FIREWISE-X — NASA PSI-25',
+      'validation': 'Validation Suite | FIREWISE-X — NASA PSI-25',
+    };
+    document.title = titles[activeTab] || 'FIREWISE-X — Flame in Freefall | NASA PSI-25';
+  }, [activeTab]);
+
   useEffect(() => {
     fetchInitialData();
   }, []);
