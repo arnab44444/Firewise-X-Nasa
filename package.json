@@ -1,0 +1,11 @@
+{
+  "name": "firewise-x",
+  "version": "1.0.0",
+  "description": "FIREWISE-X: AI-Powered Microgravity Fire Intelligence Platform",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "server": "python backend/server.py",
+    "start": "npm run dev"
+  }
+}

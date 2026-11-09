@@ -1,0 +1,13 @@
+{
+  "total_training_samples": 129,
+  "cv_classification_accuracy": 0.674,
+  "cv_burn_duration_r2": 0.469,
+  "cv_spread_rate_r2": 0.647,
+  "feature_count": 16,
+  "classes": [
+    "extinguished_blowoff",
+    "extinguished_quenched",
+    "no_ignition",
+    "sustained"
+  ]
+}
