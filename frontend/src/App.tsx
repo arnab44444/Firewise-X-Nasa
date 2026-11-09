@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
-import { DisclaimerBanner } from './components/DisclaimerBanner';
 import { OverviewDashboard } from './components/OverviewDashboard';
 import { FlameStudio } from './components/FlameStudio';
 import { PreMissionAssessment } from './components/PreMissionAssessment';
@@ -57,10 +56,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#060a16] text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-black">
-      {/* Disclaimer Banner */}
-      <DisclaimerBanner />
-
+    <div className="min-h-screen bg-[#060a16] text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-black w-full max-w-full overflow-x-hidden">
       {/* Main Navigation */}
       <Navbar
         activeTab={activeTab}
@@ -69,7 +65,7 @@ export const App: React.FC = () => {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-6 sm:pt-8 min-w-0">
         {loading ? (
           <div className="h-96 flex flex-col items-center justify-center space-y-4 text-cyan-400">
             <div className="w-10 h-10 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileText, 
   Search, 
@@ -8,7 +8,11 @@ import {
   CheckCircle2, 
   Layers,
   FileCheck,
-  BookOpen
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
 import { Experiment, EvidenceCardData } from '../types';
 import { EvidenceCard } from './EvidenceCard';
@@ -29,6 +33,10 @@ export const ResearchReports: React.FC<ResearchReportsProps> = ({
   const [selectedExperiment, setSelectedExperiment] = useState<Experiment | null>(null);
   const [selectedEvidence, setSelectedEvidence] = useState<EvidenceCardData | null>(null);
   const [downloadingTestId, setDownloadingTestId] = useState<string | null>(null);
+
+  // Pagination state (10 items per page)
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize = 10;
 
   const pis = ['ALL', 'Bhattacharjee', 'Ferkul', 'Fernandez-Pello', 'Miller', 'Olson', "T'ien"];
   const materials = [
@@ -57,6 +65,33 @@ export const ResearchReports: React.FC<ResearchReportsProps> = ({
 
     return matchesSearch && matchesPI && matchesMat && matchesOutcome;
   });
+
+  // Reset pagination to page 1 when search or filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedPI, selectedMaterial, selectedOutcome]);
+
+  const totalPages = Math.ceil(filteredExperiments.length / pageSize) || 1;
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, filteredExperiments.length);
+  const paginatedExperiments = filteredExperiments.slice(startIndex, endIndex);
+
+  // Generate pagination page list with ellipsis
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 4) {
+        pages.push(1, 2, 3, 4, 5, '...', totalPages);
+      } else if (currentPage >= totalPages - 3) {
+        pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+    return pages;
+  };
 
   const loadEvidenceCard = async (testId: string) => {
     try {
@@ -111,7 +146,12 @@ export const ResearchReports: React.FC<ResearchReportsProps> = ({
         </div>
 
         <div className="flex items-center space-x-2 text-xs font-mono text-cyan-300">
-          <span>SHOWING {filteredExperiments.length} OF {experiments.length} TESTS</span>
+          <span>
+            SHOWING {filteredExperiments.length > 0 ? startIndex + 1 : 0}–{endIndex} OF {filteredExperiments.length} TESTS
+          </span>
+          <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/30 text-[10px]">
+            PAGE {currentPage}/{totalPages}
+          </span>
         </div>
       </div>
 
@@ -193,7 +233,7 @@ export const ResearchReports: React.FC<ResearchReportsProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-mono text-[11px]">
-              {filteredExperiments.slice(0, 50).map((exp) => (
+              {paginatedExperiments.map((exp) => (
                 <tr 
                   key={exp.id} 
                   className="hover:bg-slate-800/40 transition-colors cursor-pointer group"
@@ -252,6 +292,85 @@ export const ResearchReports: React.FC<ResearchReportsProps> = ({
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination Controls Bar (10 per page) */}
+        <div className="p-3.5 sm:p-4 bg-slate-900/90 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono">
+          <div className="text-slate-400 text-[11px]">
+            Showing <span className="text-cyan-300 font-bold">{filteredExperiments.length > 0 ? startIndex + 1 : 0}</span> to{' '}
+            <span className="text-cyan-300 font-bold">{endIndex}</span> of{' '}
+            <span className="text-white font-bold">{filteredExperiments.length}</span> tests (10 per page)
+          </div>
+
+          <div className="flex items-center space-x-1">
+            {/* First Page */}
+            <button
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+              title="First Page"
+            >
+              <ChevronsLeft className="w-4 h-4" />
+            </button>
+
+            {/* Prev Page */}
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+              title="Previous Page"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            {/* Page Numbers */}
+            <div className="flex items-center space-x-1">
+              {getPageNumbers().map((p, i) => {
+                if (p === '...') {
+                  return (
+                    <span key={`ellipsis-${i}`} className="px-1.5 text-slate-600 text-[11px]">
+                      ...
+                    </span>
+                  );
+                }
+                const pageNum = p as number;
+                const isCurrent = pageNum === currentPage;
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-7 h-7 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+                      isCurrent
+                        ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm shadow-cyan-500/30'
+                        : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Next Page */}
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+              title="Next Page"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+
+            {/* Last Page */}
+            <button
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-slate-800 text-slate-300 hover:text-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+              title="Last Page"
+            >
+              <ChevronsRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 

@@ -150,10 +150,10 @@ export const PreMissionAssessment: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center space-x-2 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 w-full sm:w-auto">
           <button
             onClick={() => setMode('single')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
               mode === 'single'
                 ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm'
                 : 'text-slate-400 hover:text-white'
@@ -166,7 +166,7 @@ export const PreMissionAssessment: React.FC = () => {
               setMode('compare');
               if (!comparisonResults) runComparison();
             }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+            className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer whitespace-nowrap ${
               mode === 'compare'
                 ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm'
                 : 'text-slate-400 hover:text-white'
@@ -429,14 +429,14 @@ export const PreMissionAssessment: React.FC = () => {
       ) : (
         /* Multi-Scenario Comparator View (Requirement 1: Scenarios A, B, C using same lookup) */
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <p className="text-xs text-slate-400">
               Scenarios A, B, and C evaluated using the identical empirical BASS-II lookup. Extreme conditions trigger range warnings.
             </p>
             <button
               onClick={runComparison}
               disabled={compareLoading}
-              className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+              className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center space-x-1.5 cursor-pointer disabled:opacity-50 shrink-0 whitespace-nowrap"
             >
               <span>Refresh Scenario Comparison</span>
             </button>

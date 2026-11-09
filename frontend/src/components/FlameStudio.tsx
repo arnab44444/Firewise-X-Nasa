@@ -221,10 +221,10 @@ export const FlameStudio: React.FC<FlameStudioProps> = ({ videos, initialTestId 
   return (
     <div className="space-y-6 text-left pb-12">
       {/* Header bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-panel p-4 rounded-xl border border-cyan-500/20">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 glass-panel p-3.5 sm:p-4 rounded-xl border border-cyan-500/20">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center space-x-2">
-            <Flame className="w-5 h-5 text-orange-400" />
+          <h2 className="text-lg sm:text-xl font-bold text-white flex items-center space-x-2">
+            <Flame className="w-5 h-5 text-orange-400 shrink-0" />
             <span>Flame Analysis Studio</span>
           </h2>
           <p className="text-xs text-slate-400">
@@ -233,24 +233,28 @@ export const FlameStudio: React.FC<FlameStudioProps> = ({ videos, initialTestId 
         </div>
 
         {/* Video selector */}
-        <div className="flex items-center space-x-3">
-          <label className="text-xs text-slate-400 font-mono">SELECT FLIGHT TEST:</label>
-          <select
-            value={selectedTestId}
-            onChange={(e) => setSelectedTestId(e.target.value)}
-            className="bg-slate-900 border border-cyan-500/40 text-cyan-200 text-xs rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-cyan-400"
-          >
-            {videos.map((v) => (
-              <option key={v.test_id} value={v.test_id}>
-                Test #{v.test_id} — {v.material_category} ({v.initial_o2}% O₂)
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          <div className="flex items-center space-x-2 w-full sm:w-auto min-w-0">
+            <label className="text-[11px] sm:text-xs text-slate-400 font-mono whitespace-nowrap shrink-0">
+              TEST:
+            </label>
+            <select
+              value={selectedTestId}
+              onChange={(e) => setSelectedTestId(e.target.value)}
+              className="bg-slate-900 border border-cyan-500/40 text-cyan-200 text-xs rounded-lg px-2.5 py-2 font-mono focus:outline-none focus:border-cyan-400 flex-1 sm:w-64 min-w-0 truncate"
+            >
+              {videos.map((v) => (
+                <option key={v.test_id} value={v.test_id}>
+                  Test #{v.test_id} — {v.material_category} ({v.initial_o2}% O₂)
+                </option>
+              ))}
+            </select>
+          </div>
 
           <button
             onClick={handleDownloadAnalysis}
             disabled={!analysis}
-            className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-mono text-cyan-300 border border-slate-700 flex items-center space-x-1.5 cursor-pointer disabled:opacity-40"
+            className="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-mono text-cyan-300 border border-slate-700 flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-40 shrink-0"
             title="Download JSON Flame Analysis"
           >
             <Download className="w-3.5 h-3.5" />
@@ -304,15 +308,15 @@ export const FlameStudio: React.FC<FlameStudioProps> = ({ videos, initialTestId 
         </div>
 
         {/* Right: AI Segmentation HUD & Flame Detection */}
-        <div className="glass-panel p-4 rounded-2xl border border-cyan-500/30 space-y-3 relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-              <h3 className="text-sm font-bold text-cyan-300 font-mono uppercase">
+        <div className="glass-panel p-3.5 sm:p-4 rounded-2xl border border-cyan-500/30 space-y-3 relative overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center space-x-2 min-w-0">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shrink-0"></span>
+              <h3 className="text-xs sm:text-sm font-bold text-cyan-300 font-mono uppercase truncate">
                 AI Segmentation & Kinematic HUD
               </h3>
             </div>
-            <div className="flex items-center space-x-2 text-[10px] font-mono text-slate-300">
+            <div className="flex items-center space-x-2 text-[10px] font-mono text-slate-300 shrink-0">
               <label className="flex items-center space-x-1 cursor-pointer">
                 <input
                   type="checkbox"
@@ -352,9 +356,9 @@ export const FlameStudio: React.FC<FlameStudioProps> = ({ videos, initialTestId 
               className="w-full h-full object-contain"
             />
 
-            {/* Live Telemetry HUD Overlay */}
+            {/* Live Telemetry HUD Overlay (Responsive 2x2 grid on mobile, 4-col on desktop) */}
             {currentFrameData && (
-              <div className="absolute bottom-2 left-2 right-2 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-cyan-500/30 grid grid-cols-4 gap-2 text-[10px] font-mono">
+              <div className="absolute bottom-2 left-2 right-2 bg-slate-950/85 backdrop-blur-md px-2.5 sm:px-3 py-1.5 rounded-lg border border-cyan-500/30 grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 text-[9px] sm:text-[10px] font-mono">
                 <div>
                   <span className="text-slate-500 block">FLAME AREA</span>
                   <span className="text-orange-400 font-bold">
@@ -386,58 +390,61 @@ export const FlameStudio: React.FC<FlameStudioProps> = ({ videos, initialTestId 
       </div>
 
       {/* Synchronized Playback Controls & Frame Stepping (Requirement 5) */}
-      <div className="glass-panel p-4 rounded-xl border border-cyan-500/20 space-y-3">
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={togglePlay}
-            className="w-10 h-10 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center justify-center transition-all cursor-pointer font-bold shadow-md shadow-cyan-500/20"
-          >
-            {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
-          </button>
+      <div className="glass-panel p-3.5 sm:p-4 rounded-xl border border-cyan-500/20 space-y-3">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+          {/* Action buttons (Play, Reset, Stepping) */}
+          <div className="flex items-center justify-between sm:justify-start gap-2">
+            <button
+              onClick={togglePlay}
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center justify-center transition-all cursor-pointer font-bold shadow-md shadow-cyan-500/20 shrink-0"
+            >
+              {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
+            </button>
 
-          <button
-            onClick={() => handleSeek(0)}
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
-            title="Reset video"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
+            <button
+              onClick={() => handleSeek(0)}
+              className="p-2 sm:p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors shrink-0 cursor-pointer"
+              title="Reset video"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
 
-          {/* Frame Stepping Buttons (Requirement 5) */}
-          <div className="flex items-center space-x-1 border-l border-r border-slate-800 px-3">
-            <button
-              onClick={() => handleSeek(Math.max(0, currentTime - 5 / 29.97))}
-              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-cyan-300"
-              title="Step back 5 frames"
-            >
-              -5f
-            </button>
-            <button
-              onClick={() => handleSeek(Math.max(0, currentTime - 1 / 29.97))}
-              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-cyan-300"
-              title="Step back 1 frame"
-            >
-              -1f
-            </button>
-            <button
-              onClick={() => handleSeek(Math.min(duration || 45, currentTime + 1 / 29.97))}
-              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-cyan-300"
-              title="Step forward 1 frame"
-            >
-              +1f
-            </button>
-            <button
-              onClick={() => handleSeek(Math.min(duration || 45, currentTime + 5 / 29.97))}
-              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-cyan-300"
-              title="Step forward 5 frames"
-            >
-              +5f
-            </button>
+            {/* Frame Stepping Buttons */}
+            <div className="flex items-center space-x-1 border-l border-r border-slate-800 px-2 sm:px-3">
+              <button
+                onClick={() => handleSeek(Math.max(0, currentTime - 5 / 29.97))}
+                className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-cyan-300 cursor-pointer"
+                title="Step back 5 frames"
+              >
+                -5f
+              </button>
+              <button
+                onClick={() => handleSeek(Math.max(0, currentTime - 1 / 29.97))}
+                className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-cyan-300 cursor-pointer"
+                title="Step back 1 frame"
+              >
+                -1f
+              </button>
+              <button
+                onClick={() => handleSeek(Math.min(duration || 45, currentTime + 1 / 29.97))}
+                className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-cyan-300 cursor-pointer"
+                title="Step forward 1 frame"
+              >
+                +1f
+              </button>
+              <button
+                onClick={() => handleSeek(Math.min(duration || 45, currentTime + 5 / 29.97))}
+                className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-cyan-300 cursor-pointer"
+                title="Step forward 5 frames"
+              >
+                +5f
+              </button>
+            </div>
           </div>
 
           {/* Time scrubber slider */}
-          <div className="flex-1 flex items-center space-x-3">
-            <span className="text-xs font-mono text-cyan-300 w-12 text-right">
+          <div className="flex-1 flex items-center space-x-2 sm:space-x-3 min-w-0">
+            <span className="text-xs font-mono text-cyan-300 w-11 sm:w-12 text-right shrink-0">
               {currentTime.toFixed(2)}s
             </span>
             <input
@@ -447,9 +454,9 @@ export const FlameStudio: React.FC<FlameStudioProps> = ({ videos, initialTestId 
               step={0.033}
               value={currentTime}
               onChange={(e) => handleSeek(parseFloat(e.target.value))}
-              className="flex-1 accent-cyan-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
+              className="flex-1 accent-cyan-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer min-w-0"
             />
-            <span className="text-xs font-mono text-slate-400 w-12">
+            <span className="text-xs font-mono text-slate-400 w-11 sm:w-12 shrink-0">
               {(duration || (analysis?.video_metadata.duration_s || 45)).toFixed(2)}s
             </span>
           </div>
@@ -509,16 +516,16 @@ export const FlameStudio: React.FC<FlameStudioProps> = ({ videos, initialTestId 
       {analysis && analysis.timeline.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Flame Area vs Time Chart */}
-          <div className="glass-panel p-4 rounded-2xl border border-cyan-500/20 space-y-2">
+          <div className="glass-panel p-4 rounded-2xl border border-cyan-500/20 space-y-2 min-w-0 overflow-hidden">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold font-mono text-slate-200 uppercase flex items-center space-x-1.5">
-                <TrendingUp className="w-3.5 h-3.5 text-orange-400" />
+              <h3 className="text-xs font-bold font-mono text-slate-200 uppercase flex items-center space-x-1.5 truncate">
+                <TrendingUp className="w-3.5 h-3.5 text-orange-400 shrink-0" />
                 <span>Flame Area Evolution: A(t) [cm²]</span>
               </h3>
-              <span className="text-[10px] text-slate-400">Click graph to seek video</span>
+              <span className="text-[10px] text-slate-400 shrink-0">Click graph to seek</span>
             </div>
 
-            <div className="h-56 w-full">
+            <div className="h-56 w-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={analysis.timeline} onClick={handleChartClick}>
                   <defs>
@@ -558,16 +565,16 @@ export const FlameStudio: React.FC<FlameStudioProps> = ({ videos, initialTestId 
           </div>
 
           {/* Flame Front Velocity & Centroid Drift */}
-          <div className="glass-panel p-4 rounded-2xl border border-cyan-500/20 space-y-2">
+          <div className="glass-panel p-4 rounded-2xl border border-cyan-500/20 space-y-2 min-w-0 overflow-hidden">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold font-mono text-slate-200 uppercase flex items-center space-x-1.5">
-                <Activity className="w-3.5 h-3.5 text-cyan-400" />
+              <h3 className="text-xs font-bold font-mono text-slate-200 uppercase flex items-center space-x-1.5 truncate">
+                <Activity className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
                 <span>Flame Spread Velocity: Vf(t) [cm/s]</span>
               </h3>
-              <span className="text-[10px] text-slate-400">Spatial Calibration ~30 px/cm</span>
+              <span className="text-[10px] text-slate-400 shrink-0">~30 px/cm</span>
             </div>
 
-            <div className="h-56 w-full">
+            <div className="h-56 w-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={analysis.timeline} onClick={handleChartClick}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
