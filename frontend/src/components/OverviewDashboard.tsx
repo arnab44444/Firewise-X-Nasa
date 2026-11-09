@@ -43,19 +43,17 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
           <img
             src="/hero-launch.jpg"
             alt="NASA Space Shuttle Launch - Combustion in Microgravity"
-            className="w-full h-full object-cover object-[center_35%] lg:object-center select-none"
+            className="w-full h-full object-cover object-[center_35%] lg:object-center select-none filter brightness-120 contrast-110 saturate-105"
           />
-          {/* Left-to-right gradient to ensure text readability on the left while keeping the shuttle vivid on the right */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#070c1b]/95 via-[#070c1b]/80 sm:via-[#070c1b]/70 to-[#070c1b]/40"></div>
-          {/* Top and bottom subtle vignettes to blend into the site container */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#070c1b] via-transparent to-[#070c1b]/70"></div>
-          {/* Overall dark tint for cohesive spaceflight theme */}
-          <div className="absolute inset-0 bg-[#070c1b]/25"></div>
+          {/* Subtle directional gradient: gently darkens behind the text on the left, completely transparent towards center/right to keep the shuttle bright & vivid */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#070c1b]/90 via-[#070c1b]/55 sm:via-[#070c1b]/25 to-transparent"></div>
+          {/* Soft top and bottom edge feathering only */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#070c1b]/70 via-transparent to-[#070c1b]/30"></div>
         </div>
 
         {/* Ambient Plume & Rocket Thruster Glows */}
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full bg-cyan-500/15 blur-3xl pointer-events-none z-0"></div>
-        <div className="absolute bottom-1/3 right-1/3 w-80 h-80 rounded-full bg-orange-500/20 blur-3xl pointer-events-none z-0"></div>
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full bg-cyan-400/25 blur-3xl pointer-events-none z-0"></div>
+        <div className="absolute bottom-1/3 right-1/3 w-80 h-80 rounded-full bg-orange-500/30 blur-3xl pointer-events-none z-0"></div>
 
         {/* Relevant Content Layer on top of full background */}
         <div className="relative z-10 max-w-3xl space-y-6 text-left">
