@@ -36,101 +36,77 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
 
   return (
     <div className="space-y-12 pb-16">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-2xl glass-panel border border-cyan-500/20 p-5 sm:p-10 lg:p-14">
-        {/* Subtle background ambient launch texture */}
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none opacity-20">
+      {/* Hero Section with Full-Bleed Space Shuttle Launch Background */}
+      <section className="relative overflow-hidden rounded-2xl glass-panel border border-cyan-500/20 p-6 sm:p-12 lg:p-16 min-h-[480px] sm:min-h-[520px] flex flex-col justify-center">
+        {/* Full-Bleed Background Image & Seamless Gradient Overlays */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           <img
             src="/hero-launch.jpg"
-            alt=""
-            className="w-full h-full object-cover object-right lg:object-center blur-sm scale-105"
-            style={{
-              maskImage: 'radial-gradient(ellipse 80% 80% at 80% 50%, black 20%, transparent 80%)',
-              WebkitMaskImage: 'radial-gradient(ellipse 80% 80% at 80% 50%, black 20%, transparent 80%)',
-            }}
+            alt="NASA Space Shuttle Launch - Combustion in Microgravity"
+            className="w-full h-full object-cover object-[center_35%] lg:object-center select-none"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#070c1b] via-[#070c1b]/95 to-transparent"></div>
-          <div className="absolute inset-0 bg-gradient-to-t from-[#070c1b] via-transparent to-[#070c1b]/80"></div>
+          {/* Left-to-right gradient to ensure text readability on the left while keeping the shuttle vivid on the right */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#070c1b]/95 via-[#070c1b]/80 sm:via-[#070c1b]/70 to-[#070c1b]/40"></div>
+          {/* Top and bottom subtle vignettes to blend into the site container */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#070c1b] via-transparent to-[#070c1b]/70"></div>
+          {/* Overall dark tint for cohesive spaceflight theme */}
+          <div className="absolute inset-0 bg-[#070c1b]/25"></div>
         </div>
 
-        {/* Background ambient glows */}
-        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none"></div>
-        <div className="absolute bottom-0 left-1/3 -mb-20 w-80 h-80 rounded-full bg-orange-500/10 blur-3xl pointer-events-none"></div>
+        {/* Ambient Plume & Rocket Thruster Glows */}
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full bg-cyan-500/15 blur-3xl pointer-events-none z-0"></div>
+        <div className="absolute bottom-1/3 right-1/3 w-80 h-80 rounded-full bg-orange-500/20 blur-3xl pointer-events-none z-0"></div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
-          {/* Text & Paragraph Portion (Order 2 on mobile, Order 1 on Desktop lg+) */}
-          <div className="lg:col-span-7 order-2 lg:order-1 space-y-6 text-left">
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-950/70 border border-cyan-400/30 text-cyan-300 text-xs font-mono">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-              <span>NASA PSI-25 RESEARCH PLATFORM</span>
-            </div>
-
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight sm:leading-none">
-              Understanding Fire <br />
-              <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-orange-400 bg-clip-text text-transparent">
-                Beyond Earth.
-              </span>
-            </h1>
-
-            <p className="text-sm sm:text-lg text-slate-300 max-w-2xl font-normal leading-relaxed">
-              AI-powered microgravity combustion intelligence for safer space exploration. Built on flight experiments from the International Space Station’s Microgravity Science Glovebox.
-            </p>
-
-            <div className="flex flex-wrap gap-3 sm:gap-4 pt-2">
-              <button
-                onClick={() => onNavigate('flame-studio')}
-                className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold text-xs sm:text-sm flex items-center space-x-2 shadow-lg shadow-cyan-500/25 transition-all cursor-pointer"
-              >
-                <Flame className="w-4 h-4 text-orange-300" />
-                <span>Explore AI Flame Studio</span>
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </button>
-
-              <button
-                onClick={() => onNavigate('assessment')}
-                className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-cyan-200 border border-cyan-500/30 hover:border-cyan-400 font-semibold text-xs sm:text-sm flex items-center space-x-2 transition-all cursor-pointer"
-              >
-                <Activity className="w-4 h-4 text-cyan-400" />
-                <span>Launch Pre-Mission Assessment</span>
-              </button>
-            </div>
-
-            {/* Quick trust metrics */}
-            <div className="grid grid-cols-2 gap-2 sm:gap-4 pt-4 border-t border-slate-800/80">
-              <div>
-                <p className="text-xl sm:text-2xl font-bold font-mono text-cyan-400">129</p>
-                <p className="text-[10px] sm:text-xs text-slate-400">NASA Flight Tests</p>
-              </div>
-              <div>
-                <p className="text-xl sm:text-2xl font-bold font-mono text-orange-400">52</p>
-                <p className="text-[10px] sm:text-xs text-slate-400">Unique Flight Test Videos (84 Files)</p>
-              </div>
-            </div>
+        {/* Relevant Content Layer on top of full background */}
+        <div className="relative z-10 max-w-3xl space-y-6 text-left">
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-slate-950/80 backdrop-blur-md border border-cyan-400/40 text-cyan-300 text-xs font-mono shadow-lg">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+            <span>NASA PSI-25 RESEARCH PLATFORM</span>
           </div>
 
-          {/* Cinematic Space Shuttle Launch Visual (Order 1 on mobile, Order 2 on Desktop lg+) */}
-          <div className="lg:col-span-5 order-1 lg:order-2 flex justify-center items-center py-2 sm:py-0">
-            <div className="relative w-full max-w-md sm:max-w-lg aspect-[16/10] sm:aspect-[16/9] lg:aspect-[4/3] flex items-center justify-center">
-              {/* Multi-tier atmospheric ambient backlight */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4/5 h-4/5 rounded-full bg-cyan-500/20 blur-3xl pointer-events-none"></div>
-              <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 w-3/5 h-3/5 rounded-full bg-orange-500/25 blur-2xl pointer-events-none"></div>
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight sm:leading-none drop-shadow-lg">
+            Understanding Fire <br />
+            <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-orange-400 bg-clip-text text-transparent">
+              Beyond Earth.
+            </span>
+          </h1>
 
-              {/* Seamlessly blended launch image container */}
-              <div className="relative w-full h-full overflow-hidden flex items-center justify-center">
-                <img
-                  src="/hero-launch.jpg"
-                  alt="NASA Space Shuttle Launch - Combustion in Microgravity"
-                  className="w-full h-full object-cover object-center select-none transform hover:scale-105 transition-transform duration-700 ease-out"
-                  style={{
-                    maskImage: 'radial-gradient(ellipse 90% 82% at 50% 50%, black 45%, transparent 100%)',
-                    WebkitMaskImage: 'radial-gradient(ellipse 90% 82% at 50% 50%, black 45%, transparent 100%)',
-                  }}
-                />
+          <p className="text-sm sm:text-lg text-slate-200 max-w-2xl font-normal leading-relaxed drop-shadow-md">
+            AI-powered microgravity combustion intelligence for safer space exploration. Built on flight experiments from the International Space Station’s Microgravity Science Glovebox.
+          </p>
 
-                {/* Soft gradient edge vignette overlays to melt into the dark UI */}
-                <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#070c1b] via-transparent to-[#070c1b]/60"></div>
-                <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-[#070c1b]/70 via-transparent to-[#070c1b]/70"></div>
-              </div>
+          <div className="flex flex-wrap gap-3 sm:gap-4 pt-2">
+            <button
+              onClick={() => onNavigate('flame-studio')}
+              className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold text-xs sm:text-sm flex items-center space-x-2 shadow-lg shadow-cyan-500/30 transition-all cursor-pointer"
+            >
+              <Flame className="w-4 h-4 text-orange-300" />
+              <span>Explore AI Flame Studio</span>
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </button>
+
+            <button
+              onClick={() => onNavigate('assessment')}
+              className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-slate-950/90 hover:bg-slate-900 text-cyan-200 border border-cyan-500/40 hover:border-cyan-400 font-semibold text-xs sm:text-sm flex items-center space-x-2 backdrop-blur-md shadow-lg transition-all cursor-pointer"
+            >
+              <Activity className="w-4 h-4 text-cyan-400" />
+              <span>Launch Pre-Mission Assessment</span>
+            </button>
+          </div>
+
+          {/* Quick trust metrics */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-6 pt-5 border-t border-slate-700/60 max-w-xl">
+            <div>
+              <p className="text-2xl sm:text-3xl font-bold font-mono text-cyan-400 drop-shadow">129</p>
+              <p className="text-[11px] sm:text-xs text-slate-300 font-medium">NASA Flight Tests</p>
+            </div>
+            <div>
+              <p className="text-2xl sm:text-3xl font-bold font-mono text-orange-400 drop-shadow">52</p>
+              <p className="text-[11px] sm:text-xs text-slate-300 font-medium">Unique Flight Test Videos (84 Files)</p>
+            </div>
+            <div className="col-span-2 sm:col-span-1">
+              <p className="text-2xl sm:text-3xl font-bold font-mono text-emerald-400 drop-shadow">ISS PSI-25</p>
+              <p className="text-[11px] sm:text-xs text-slate-300 font-medium">Microgravity Science Glovebox</p>
             </div>
           </div>
         </div>
