@@ -241,17 +241,9 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, systemS
                 })}
               </div>
 
-              {/* Mobile Actions & Engine Status */}
-              <div className="pt-2 border-t border-slate-800/80 flex flex-col sm:flex-row gap-2.5">
-                <button
-                  onClick={() => handleNavClick('assessment')}
-                  className="flex-1 flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl text-xs font-semibold bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white shadow-lg shadow-orange-500/20 cursor-pointer"
-                >
-                  <Activity className="w-4 h-4" />
-                  <span>Launch Pre-Mission Assessment</span>
-                </button>
-
-                <div className="flex items-center justify-center space-x-2 px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-300">
+              {/* Engine Status */}
+              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-center">
+                <div className="w-full flex items-center justify-center space-x-2 px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-300">
                   <span className="relative flex h-2 w-2 shrink-0">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
