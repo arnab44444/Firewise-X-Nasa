@@ -137,10 +137,10 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, systemS
           })}
         </nav>
 
-        {/* Right Section: Status Pill, CTA & Hamburger Menu Button */}
+        {/* Right Section: Status Pill & Hamburger Menu Button */}
         <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
-          {/* Status Pill (Visible on md and above) */}
-          <div className="hidden md:flex items-center space-x-2 px-2.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-700/60 text-xs shrink-0">
+          {/* Status Pill */}
+          <div className="flex items-center space-x-2 px-2.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-700/60 text-xs shrink-0">
             <span className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -149,15 +149,6 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, systemS
               {systemStatus}
             </span>
           </div>
-
-          {/* Launch Predictor Button (Desktop) */}
-          <button
-            onClick={() => handleNavClick('assessment')}
-            className="hidden sm:inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white shadow-md shadow-orange-500/20 transition-all cursor-pointer whitespace-nowrap shrink-0"
-          >
-            <Activity className="w-3.5 h-3.5" />
-            <span>Launch Predictor</span>
-          </button>
 
           {/* Responsive Hamburger Toggle Button (Visible when < 1280px) */}
           <button
