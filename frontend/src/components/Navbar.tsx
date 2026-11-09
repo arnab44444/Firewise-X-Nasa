@@ -109,7 +109,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, systemS
                 ISS PSI-25
               </span>
             </div>
-            <p className="text-[10px] sm:text-[11px] text-slate-400 tracking-tight -mt-0.5 whitespace-nowrap hidden sm:block">
+            <p className="text-[10px] sm:text-[11px] text-slate-400 tracking-tight -mt-0.5 whitespace-nowrap hidden xl:block">
               Microgravity Fire Intelligence & Astronaut Safety
             </p>
           </div>
@@ -137,10 +137,10 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, systemS
           })}
         </nav>
 
-        {/* Right Section: Status Pill & Hamburger Menu Button */}
+        {/* Right Section: Status Pill (Desktop only) & Hamburger Menu Button (Mobile/Tablet) */}
         <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
-          {/* Status Pill */}
-          <div className="flex items-center space-x-2 px-2.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-700/60 text-xs shrink-0">
+          {/* Status Pill (Visible on Desktop >= 1280px) */}
+          <div className="hidden xl:flex items-center space-x-2 px-2.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-700/60 text-xs shrink-0">
             <span className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -155,16 +155,16 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, systemS
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle Navigation Menu"
             aria-expanded={isMenuOpen}
-            className={`xl:hidden flex items-center space-x-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl transition-all cursor-pointer border ${
+            className={`xl:hidden flex items-center space-x-2 px-3 py-1.5 rounded-full transition-all cursor-pointer border ${
               isMenuOpen
                 ? 'bg-cyan-500/20 text-cyan-200 border-cyan-400 ring-2 ring-cyan-500/30'
-                : 'bg-slate-800/80 hover:bg-slate-700/80 text-cyan-300 border-cyan-500/30 hover:border-cyan-400'
+                : 'bg-slate-900/90 hover:bg-slate-800 text-cyan-300 border-cyan-500/40 hover:border-cyan-400'
             }`}
           >
             {isMenuOpen ? (
-              <X className="w-5 h-5 text-cyan-400" />
+              <X className="w-4 h-4 text-cyan-400" />
             ) : (
-              <Menu className="w-5 h-5 text-cyan-400" />
+              <Menu className="w-4 h-4 text-cyan-400" />
             )}
             <span className="text-xs font-mono font-semibold tracking-wider">
               {isMenuOpen ? 'CLOSE' : 'MENU'}

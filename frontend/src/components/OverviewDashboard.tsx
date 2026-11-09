@@ -81,7 +81,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
             </div>
 
             {/* Quick trust metrics */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-4 border-t border-slate-800/80">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 pt-4 border-t border-slate-800/80">
               <div>
                 <p className="text-xl sm:text-2xl font-bold font-mono text-cyan-400">129</p>
                 <p className="text-[10px] sm:text-xs text-slate-400">NASA Flight Tests</p>
@@ -89,10 +89,6 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
               <div>
                 <p className="text-xl sm:text-2xl font-bold font-mono text-orange-400">52</p>
                 <p className="text-[10px] sm:text-xs text-slate-400">Unique Flight Test Videos (84 Files)</p>
-              </div>
-              <div>
-                <p className="text-xl sm:text-2xl font-bold font-mono text-emerald-400">LOO: 68.2%</p>
-                <p className="text-[10px] sm:text-xs text-slate-400">Leave-One-Out Accuracy</p>
               </div>
             </div>
           </div>
@@ -148,7 +144,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
           <div>
             <h2 className="text-xl font-bold text-white flex items-center space-x-2">
               <Cpu className="w-5 h-5 text-cyan-400" />
-              <span>Core AI Model Architecture</span>
+              <span>Our Features</span>
             </h2>
             <p className="text-xs text-slate-400">
               Five integrated intelligence engines operationalized for spaceflight safety
@@ -341,7 +337,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
       </section>
 
       {/* Recent NASA PSI-25 Experiments Highlights */}
-      <section className="space-y-4">
+      {/* <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-white flex items-center space-x-2">
@@ -417,7 +413,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
             </div>
           ))}
         </div>
-      </section>
+      </section> */}
     </div>
   );
 };
