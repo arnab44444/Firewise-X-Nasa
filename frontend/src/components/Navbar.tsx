@@ -46,7 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, systemS
     { 
       id: 'overview', 
       label: 'Overview', 
-      icon: Flame,
+      icon: Compass,
       desc: 'Mission control telemetry & flight dataset counts'
     },
     { 
@@ -58,25 +58,25 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, systemS
     { 
       id: 'assessment', 
       label: 'Pre-Mission Assessment', 
-      icon: Flame,
+      icon: Activity,
       desc: 'BASS-II empirical lookup & flight envelope bounds'
     },
     { 
       id: 'astronaut-ai', 
       label: 'Astronaut AI', 
-      icon: Flame,
+      icon: Sparkles,
       desc: 'Grounded decision assistant citing NASA/TM-20210011385'
     },
     { 
       id: 'reports', 
       label: 'Research Reports', 
-      icon: Flame,
+      icon: FileText,
       desc: '129 flight experiment archive & 9-part PDF generator'
     },
     { 
       id: 'validation', 
       label: 'Validation Suite', 
-      icon: Flame,
+      icon: ShieldCheck,
       desc: '15-frame IoU benchmark, LOO-CV & failure audits'
     },
   ];
@@ -130,7 +130,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, systemS
                     : 'text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-orange-400 drop-shadow' : 'text-orange-400/80 group-hover:text-orange-300'}`} />
+                <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-cyan-400' : 'text-slate-400'}`} />
                 <span>{item.label}</span>
               </button>
             );
@@ -214,9 +214,9 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, systemS
                       }`}
                     >
                       <div className={`p-2 rounded-lg shrink-0 mt-0.5 ${
-                        isActive ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40 shadow-sm' : 'bg-slate-800 text-orange-400/80 border border-slate-700/60'
+                        isActive ? 'bg-cyan-500/20 text-cyan-300' : 'bg-slate-800 text-slate-400'
                       }`}>
-                        <Icon className="w-4 h-4 text-orange-400" />
+                        <Icon className="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
