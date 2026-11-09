@@ -37,7 +37,22 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
   return (
     <div className="space-y-12 pb-16">
       {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-2xl glass-panel border border-cyan-500/20 p-8 sm:p-12 lg:p-16">
+      <section className="relative overflow-hidden rounded-2xl glass-panel border border-cyan-500/20 p-5 sm:p-10 lg:p-14">
+        {/* Subtle background ambient launch texture */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none opacity-20">
+          <img
+            src="/hero-launch.jpg"
+            alt=""
+            className="w-full h-full object-cover object-right lg:object-center blur-sm scale-105"
+            style={{
+              maskImage: 'radial-gradient(ellipse 80% 80% at 80% 50%, black 20%, transparent 80%)',
+              WebkitMaskImage: 'radial-gradient(ellipse 80% 80% at 80% 50%, black 20%, transparent 80%)',
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#070c1b] via-[#070c1b]/95 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#070c1b] via-transparent to-[#070c1b]/80"></div>
+        </div>
+
         {/* Background ambient glows */}
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none"></div>
         <div className="absolute bottom-0 left-1/3 -mb-20 w-80 h-80 rounded-full bg-orange-500/10 blur-3xl pointer-events-none"></div>
@@ -93,45 +108,28 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
             </div>
           </div>
 
-          {/* Cinematic Microgravity Flame Graphic (Order 1 on mobile, Order 2 on Desktop lg+) */}
+          {/* Cinematic Space Shuttle Launch Visual (Order 1 on mobile, Order 2 on Desktop lg+) */}
           <div className="lg:col-span-5 order-1 lg:order-2 flex justify-center items-center py-2 sm:py-0">
-            <div className="relative w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center">
-              {/* Outer chamber ring */}
-              <div className="absolute inset-0 rounded-full border border-cyan-500/20 animate-[spin_60s_linear_infinite]"></div>
-              <div className="absolute inset-4 rounded-full border border-dashed border-cyan-500/30 animate-[spin_40s_linear_infinite_reverse]"></div>
-              
-              {/* Spherical microgravity flame visualization (Clean, text removed) */}
-              <div className="relative w-44 h-44 sm:w-52 sm:h-52 rounded-full bg-gradient-to-t from-blue-900/40 via-cyan-900/30 to-amber-900/20 backdrop-blur-md border border-cyan-400/40 flex items-center justify-center shadow-2xl shadow-cyan-500/20 overflow-hidden">
-                {/* Glow concentric layers */}
-                <div className="absolute w-36 h-36 rounded-full bg-blue-500/20 blur-xl"></div>
-                <div className="absolute w-28 h-28 rounded-full bg-cyan-400/30 blur-lg"></div>
-                <div className="absolute w-20 h-20 rounded-full bg-orange-500/40 blur-md"></div>
-                <div className="absolute w-12 h-12 rounded-full bg-amber-200/70 blur-sm"></div>
+            <div className="relative w-full max-w-md sm:max-w-lg aspect-[16/10] sm:aspect-[16/9] lg:aspect-[4/3] flex items-center justify-center">
+              {/* Multi-tier atmospheric ambient backlight */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4/5 h-4/5 rounded-full bg-cyan-500/20 blur-3xl pointer-events-none"></div>
+              <div className="absolute bottom-1/4 left-1/2 -translate-x-1/2 w-3/5 h-3/5 rounded-full bg-orange-500/25 blur-2xl pointer-events-none"></div>
 
-                {/* SVG Spherical Flame Representation */}
-                <svg className="w-28 h-28 sm:w-36 sm:h-36 relative z-10 animate-flame" viewBox="0 0 100 100" fill="none">
-                  {/* Chemiluminescent blue halo */}
-                  <circle cx="50" cy="50" r="42" fill="none" stroke="#00f2fe" strokeWidth="1.5" strokeDasharray="4 2" opacity="0.7" />
-                  {/* Outer soot boundary */}
-                  <ellipse cx="50" cy="52" rx="32" ry="30" fill="url(#flameOuter)" opacity="0.6" />
-                  {/* Luminous core */}
-                  <ellipse cx="50" cy="50" rx="20" ry="18" fill="url(#flameCore)" opacity="0.9" />
-                  {/* Pyrolysis fuel sample representation */}
-                  <rect x="25" y="49" width="50" height="2" fill="#94a3b8" rx="1" opacity="0.8" />
+              {/* Seamlessly blended launch image container */}
+              <div className="relative w-full h-full overflow-hidden flex items-center justify-center">
+                <img
+                  src="/hero-launch.jpg"
+                  alt="NASA Space Shuttle Launch - Combustion in Microgravity"
+                  className="w-full h-full object-cover object-center select-none transform hover:scale-105 transition-transform duration-700 ease-out"
+                  style={{
+                    maskImage: 'radial-gradient(ellipse 90% 82% at 50% 50%, black 45%, transparent 100%)',
+                    WebkitMaskImage: 'radial-gradient(ellipse 90% 82% at 50% 50%, black 45%, transparent 100%)',
+                  }}
+                />
 
-                  <defs>
-                    <radialGradient id="flameOuter" cx="50%" cy="50%" r="50%">
-                      <stop offset="0%" stopColor="#f97316" stopOpacity="0.8" />
-                      <stop offset="70%" stopColor="#0284c7" stopOpacity="0.4" />
-                      <stop offset="100%" stopColor="#0369a1" stopOpacity="0" />
-                    </radialGradient>
-                    <radialGradient id="flameCore" cx="50%" cy="50%" r="50%">
-                      <stop offset="0%" stopColor="#fef08a" stopOpacity="1" />
-                      <stop offset="50%" stopColor="#f97316" stopOpacity="0.9" />
-                      <stop offset="100%" stopColor="#ea580c" stopOpacity="0" />
-                    </radialGradient>
-                  </defs>
-                </svg>
+                {/* Soft gradient edge vignette overlays to melt into the dark UI */}
+                <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#070c1b] via-transparent to-[#070c1b]/60"></div>
+                <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-[#070c1b]/70 via-transparent to-[#070c1b]/70"></div>
               </div>
             </div>
           </div>
