@@ -53,6 +53,11 @@ class FlameVideoAnalyzer:
         cleaned = cv2.morphologyEx(combined, cv2.MORPH_OPEN, kernel, iterations=1)
         cleaned = cv2.morphologyEx(cleaned, cv2.MORPH_CLOSE, kernel, iterations=2)
 
+        # MASK OUT BURNED-IN VIDEO OVERLAY TEXT (Requirement 5)
+        # NASA BASS-II videos have burned-in green/white text in top 65px and bottom 55px
+        cleaned[0:65, :] = 0
+        cleaned[425:, :] = 0
+
         contours, _ = cv2.findContours(cleaned, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         valid_contours = [c for c in contours if cv2.contourArea(c) > 25]
 

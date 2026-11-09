@@ -1,326 +1,295 @@
 """
-FIREWISE-X Scientific Knowledge & Astronaut Assistant RAG Engine
-Grounds responses in NASA PSI-25 / BASS-II documentation:
-- BASS-II Summary Report (NASA/TM-20210011385)
-- BASS-II data FAQ and Engineering requirements
-- Baseline ISS sensor telemetry limits & fire hazard classification
+FIREWISE-X Grounded Astronaut Assistant RAG Engine
+Implements Requirement 2:
+- Small set of cited facts directly from BASS-II data
+- Exact NASA paper page citations (NASA/TM-20210011385)
+- Stated reference run comparison (e.g. comparing user readings against B1 or M5)
+- Strict refusal logic for off-topic/unsupported questions with NO confidence badge
 """
 
 import os
 import re
 import json
-from typing import Dict, List, Any, Optional
+import pandas as pd
+from typing import Dict, List, Any, Optional, Tuple
 
 BASE_DIR = r"d:\nasa fire"
 DATA_DIR = os.path.join(BASE_DIR, "backend", "data")
 
-# Baseline ISS / Microgravity Science Glovebox (MSG) environmental baselines
-ISS_BASELINES = {
-    "o2_nominal_pct": 21.0,
-    "o2_min_breathable_pct": 19.5,
-    "co2_nominal_pct": 0.35,
-    "co2_elevated_pct": 0.70,
-    "co_nominal_ppm": 0.0,
-    "co_caution_ppm": 15.0,
-    "co_warning_ppm": 50.0,
-    "co_emergency_ppm": 100.0,
-    "airflow_nominal_cm_s": 5.0,
-}
-
-KNOWLEDGE_DOCS = [
+# Verified, cited flight facts from NASA/TM-20210011385
+CITED_FACTS = [
     {
-        "id": "microgravity_combustion_physics",
-        "title": "Fundamental Microgravity Combustion & Buoyancy Suppression",
-        "keywords": ["buoyancy", "microgravity", "gravity", "convection", "spherical", "flame shape", "diffusion", "heat loss"],
-        "content": (
-            "In terrestrial 1g environments, buoyancy-driven natural convection pulls hot combustion products upward "
-            "and entrains fresh cold oxygen into the base of the flame, giving flames their characteristic teardrop shape. "
-            "In microgravity (10^-4 to 10^-6 g aboard the ISS), natural buoyant convection is virtually eliminated. "
-            "Combustion becomes transport-limited by molecular diffusion and forced ventilation. Flames typically assume a "
-            "spherical or hemispherical geometry. Without buoyant removal, soot and heavy combustion products accumulate in "
-            "the reaction zone, significantly increasing radiative heat loss."
+        "id": "fact_b1",
+        "keywords": ["b1", "test b1", "bhattacharjee b1"],
+        "fact": (
+            "NASA BASS-II Test B1 (PI: Bhattacharjee): 100-µm PMMA thin film (2 cm wide) in 22.2% O₂ at 5.0 cm/s opposed airflow. "
+            "Ambient O₂ stayed flat at 22.2%. Ignited very quickly; when flow was stopped after spreading halfway, the flame extinguished "
+            "very quickly with a blue leading edge. ΔCO produced was 6 ppm."
         ),
-        "source": "NASA/TM-20210011385, Section 1.1 & Section 2.2"
+        "source": "NASA/TM-20210011385, Page 104, Table A.1"
     },
     {
-        "id": "radiative_extinction_quenching",
-        "title": "Radiative Extinction and the Low-Speed Quenching Limit",
-        "keywords": ["radiative", "extinction", "quench", "quenching", "low flow", "limit", "cooling", "heat loss"],
-        "content": (
-            "A counter-intuitive discovery of NASA BASS and BASS-II is the low-speed radiative extinction limit. "
-            "In normal gravity, blowing less air lowers flame intensity but rarely quenches a solid fire because natural convection "
-            "provides a floor flow (~10-30 cm/s). In microgravity, when forced airflow is decreased below a critical threshold "
-            "(typically 1 to 3 cm/s for PMMA films and fabrics), the fuel pyrolysis rate and chemical heat release rate drop drastically. "
-            "Simultaneously, radiant heat emission from soot particles cools the flame faster than chemical reactions generate heat. "
-            "This causes the flame to shrink into a dim blue hemispherical ring and abruptly extinguish (radiative quenching)."
+        "id": "fact_m5",
+        "keywords": ["m5", "test m5", "miller m5", "thick pmma"],
+        "fact": (
+            "NASA BASS-II Test M5 (PI: Miller): 1-mm thick PMMA slab (2 cm wide, opposed flow). "
+            "Initial cabin O₂ was 22.2%, but dropped sharply to 19.0% as the thick solid burned. "
+            "CO production went over range (>500 ppm, saturating the CSA-CP sensor), demonstrating substantial incomplete combustion products from thick PMMA."
         ),
-        "source": "NASA/TM-20210011385, Section 2.2 & Bhattacharjee et al."
+        "source": "NASA/TM-20210011385, Page 108, Table A.4"
     },
     {
-        "id": "blowoff_extinction",
-        "title": "Aerodynamic Blow-Off Extinction at High Flow",
-        "keywords": ["blowoff", "blow-off", "high flow", "velocity", "detachment", "air display", "strain"],
-        "content": (
-            "At the opposite extreme, when airflow velocity is increased substantially (e.g. > 30-50 cm/s in BASS-II), "
-            "the aerodynamic residence time (t_res = L / U) in the boundary layer becomes shorter than the chemical reaction time "
-            "(t_chem). The flow strips heat and intermediate radicals away from the flame anchor faster than the fuel can sustain them, "
-            "leading to flame detachment, unstable flickering, and blow-off extinction."
+        "id": "fact_f1",
+        "keywords": ["f1", "test f1", "ferkul f1", "nomex"],
+        "fact": (
+            "NASA BASS-II Test F1 (PI: Ferkul): Nomex III fabric sample in 22.2% O₂ and 9.5 cm/s concurrent flow. "
+            "The material ignited momentarily while the electric hot-wire igniter was energized, but did not spread at all and completely "
+            "self-extinguished as soon as the igniter was turned off. ΔCO was 2 ppm."
         ),
-        "source": "NASA/TM-20210011385, Table 7.1 & Section 7.0"
+        "source": "NASA/TM-20210011385, Page 105, Table A.2"
     },
     {
-        "id": "fuel_flammability_rankings",
-        "title": "Material Flammability in Microgravity: PMMA, SIBAL, and Nomex",
-        "keywords": ["material", "pmma", "sibal", "nomex", "cotton", "thickness", "slab", "film", "rod"],
-        "content": (
-            "NASA PSI-25 systematically benchmarked different spacecraft materials:\n"
-            "1. SIBAL Fabric (75% cotton / 25% fiberglass): Burns readily with vigorous concurrent spread even down to ~17% O2.\n"
-            "2. Thin PMMA Film (100-400 um): Thermally thin fuel that ignites rapidly, spreads fast (~1-2 mm/s), and exhibits sensitive radiative extinction.\n"
-            "3. Thick PMMA Slabs and Rods (1mm to 12.7mm): Thermally thick fuels requiring sustained conductive heat flux into solid depth. Spread rates are an order of magnitude lower (~0.05-0.3 mm/s).\n"
-            "4. Nomex III: Fire-resistant aramid material. In BASS-II tests F1 and F2, Nomex ignited momentarily under electrical igniter contact but completely self-extinguished without flame propagation even in 22% O2."
+        "id": "fact_t4",
+        "keywords": ["t4", "test t4", "tien t4", "sibal", "quench"],
+        "fact": (
+            "NASA BASS-II Test T4 (PI: T'ien): 2.2-cm wide SIBAL fabric (75/25 cotton/fiberglass) in 18.7% O₂ concurrent flow. "
+            "Ignited at 10 cm/s flow speed, then flow was incrementally reduced to 2.2 cm/s. The flame shrunk into a blue circular shape "
+            "and quenched at 2.2 cm/s due to radiative heat loss exceeding heat release."
         ),
-        "source": "NASA/TM-20210011385, Section 1.0 & Appendix A"
+        "source": "NASA/TM-20210011385, Page 96 & Page 112, Table 7.1"
     },
     {
-        "id": "sensor_combustion_products",
-        "title": "Compound Specific Analyzer for Combustion Products (CSA-CP)",
-        "keywords": ["sensor", "csa-cp", "co", "co2", "oxygen", "ppm", "toxic", "carbon monoxide", "anomaly"],
-        "content": (
-            "Astronaut safety protocols utilize the CSA-CP sensor for real-time monitoring of ISS cabin atmosphere. "
-            "Key combustion markers:\n"
-            "- Carbon Monoxide (CO): Normal cabin is < 2 ppm. An elevation to 15-50 ppm indicates smoldering or incomplete combustion. Above 100 ppm is an emergency.\n"
-            "- Oxygen (O2): Nominal 21.0% by vol. A steady drop of > 0.5% without nitrogen purge indicates oxygen consumption by a reaction.\n"
-            "- Carbon Dioxide (CO2): Monitored by the CDM (Carbon Dioxide Monitor). An upward surge coupled with CO confirms active oxidation."
+        "id": "fact_p1",
+        "keywords": ["p1", "test p1", "fernandez-pello", "black rod"],
+        "fact": (
+            "NASA BASS-II Test P1 (PI: Fernandez-Pello): 6.35-mm black PMMA rod in 17.7% O₂ opposed flow. "
+            "After ignition, flow speed was slowly decreased from 5 cm/s to extinction at potentiometer 0.315 (finite low flow). "
+            "CO increased by 13 ppm (1 ppm to 14 ppm)."
         ),
-        "source": "NASA/TM-20210011385, Section 1.4 & BASS-II data FAQ"
+        "source": "NASA/TM-20210011385, Page 106, Table A.3"
     },
     {
-        "id": "emergency_fire_response",
-        "title": "Spacecraft Fire Safety Emergency Procedures & Disclaimers",
-        "keywords": ["procedure", "emergency", "extinguisher", "mask", "safety", "protocol", "alarm", "suppression"],
-        "content": (
-            "STANDARD NASA SPACECRAFT SAFETY DIRECTIVE:\n"
-            "FIREWISE-X is an AI research decision-support tool, NOT an automated suppression trigger.\n"
-            "In any suspected spacecraft fire event:\n"
-            "1. Don emergency breathing apparatus (PBAs / Oxygen masks).\n"
-            "2. Isolate ventilation in the affected module immediately (starves flame of forced flow).\n"
-            "3. Confirm thermal or visual signatures.\n"
-            "4. Utilize Portable Fire Extinguishers (Fine Water Mist / CO2) according to Mission Flight Rules."
+        "id": "fact_o1",
+        "keywords": ["o1", "test o1", "olson", "clear rod"],
+        "fact": (
+            "NASA BASS-II Test O1 (PI: Olson): 6.35-mm clear PMMA rod in 22.2% O₂ concurrent flow. "
+            "Flow velocity tested at 20, 10, 5, 2, and 1 cm/s. Total burn duration recorded was 201.6 seconds."
         ),
-        "source": "ISS Flight Rules, Emergency Operations Section 3"
+        "source": "NASA/TM-20210011385, Page 110, Table A.5"
+    },
+    {
+        "id": "fact_b18",
+        "keywords": ["b18", "test b18", "blowoff", "blow-off"],
+        "fact": (
+            "NASA BASS-II Test B18 (PI: Bhattacharjee): 1-cm wide, 200-µm thick PMMA film in 17.4% O₂ opposed flow. "
+            "Tested at high duct flow velocity (10 cm/s). The flame experienced aerodynamic blow-off extinction at a fan potentiometer of 7.0."
+        ),
+        "source": "NASA/TM-20210011385, Page 104, Table A.1"
+    },
+    {
+        "id": "fact_b12",
+        "keywords": ["b12", "test b12"],
+        "fact": (
+            "NASA BASS-II Test B12 (PI: Bhattacharjee): 300-µm PMMA film (2 cm wide) in 22.2% O₂ at 2.0 cm/s opposed flow. "
+            "Observation: flame was mostly blue with soot forming only on the bottom side; burned steadily for 59.7 seconds."
+        ),
+        "source": "NASA/TM-20210011385, Page 104, Table A.1"
+    },
+    {
+        "id": "fact_radiative_extinction",
+        "keywords": ["radiative extinction", "low flow", "quench limit", "why extinguish", "spherical flame", "buoyancy"],
+        "fact": (
+            "Physical Principle of Low-Speed Radiative Extinction in Microgravity: Without buoyant natural convection pulling fresh air in, "
+            "flames become transport-limited. When ventilation speed drops below a critical threshold (~1-3 cm/s), fuel pyrolysis and heat "
+            "generation drop, while radiant heat loss from accumulated soot particles continues unabated. Radiant heat loss exceeds reaction "
+            "heat release, causing the flame to cool and extinguish."
+        ),
+        "source": "NASA/TM-20210011385, Section 2.2, Pages 19–28"
     }
 ]
 
-class AstronautAssistantRAG:
+# Stated reference flight runs for user telemetry comparison
+REFERENCE_RUNS = {
+    "B1": {
+        "test_id": "B1",
+        "pi": "Bhattacharjee",
+        "material": "100-µm PMMA thin film",
+        "initial_o2": 22.2,
+        "final_o2": 22.2,
+        "co_initial": 0,
+        "co_final": 6,
+        "co_delta": 6,
+        "flow": 5.0,
+        "source": "NASA/TM-20210011385, Page 104"
+    },
+    "M5": {
+        "test_id": "M5",
+        "pi": "Miller",
+        "material": "1-mm PMMA thick slab",
+        "initial_o2": 22.2,
+        "final_o2": 19.0,
+        "co_initial": 0,
+        "co_final": 500,
+        "co_delta": 500,
+        "flow": 8.0,
+        "source": "NASA/TM-20210011385, Page 108"
+    },
+    "T4": {
+        "test_id": "T4",
+        "pi": "T'ien",
+        "material": "SIBAL fabric",
+        "initial_o2": 18.7,
+        "final_o2": 18.5,
+        "co_initial": 0,
+        "co_final": 15,
+        "co_delta": 15,
+        "flow": 2.2,
+        "source": "NASA/TM-20210011385, Page 96"
+    }
+}
+
+class GroundedAstronautAssistant:
     def __init__(self):
-        self.docs = KNOWLEDGE_DOCS
-        self.experiments = []
+        self.facts = CITED_FACTS
+        self.experiments_df = None
         self._load_experiments()
 
     def _load_experiments(self):
-        exp_path = os.path.join(DATA_DIR, "experiments_clean.json")
-        if os.path.exists(exp_path):
-            with open(exp_path, "r", encoding="utf-8") as f:
-                self.experiments = json.load(f)
+        csv_path = os.path.join(DATA_DIR, "experiments_clean.csv")
+        if os.path.exists(csv_path):
+            self.experiments_df = pd.read_csv(csv_path)
 
-    def retrieve_context(self, query: str, top_k: int = 2) -> List[Dict[str, Any]]:
-        """Retrieve most relevant scientific documentation chunks based on keyword overlap."""
-        q_tokens = set(re.findall(r"\w+", query.lower()))
-        scored_docs = []
-        for doc in self.docs:
-            score = 0
-            for kw in doc["keywords"]:
-                if kw in query.lower():
-                    score += 3
-            doc_tokens = set(re.findall(r"\w+", doc["content"].lower()))
-            overlap = len(q_tokens.intersection(doc_tokens))
-            score += overlap
-            scored_docs.append((score, doc))
-
-        scored_docs.sort(key=lambda x: x[0], reverse=True)
-        return [doc for score, doc in scored_docs[:top_k] if score > 0]
-
-    def find_specific_experiment(self, query: str) -> Optional[Dict[str, Any]]:
-        """Look for exact test identifier e.g. B1, B12, T2, P1, M1 in query."""
-        m = re.search(r"\b([BFPOMT]\d+[a-z]?)\b", query, re.IGNORECASE)
-        if m:
-            target_id = m.group(1).upper()
-            # Prevent false positive for chemical molecules O2, CO2, CO
-            if target_id in ["O2", "CO2", "CO"] and "test" not in query.lower():
-                return None
-            for exp in self.experiments:
-                if exp["test_id"] == target_id:
-                    return exp
-        return None
-
-    def analyze_sensor_telemetry(self, 
-                                 current_o2_pct: float, 
-                                 current_co_ppm: float, 
-                                 current_co2_pct: float = 0.35,
-                                 airflow_cm_s: float = 5.0,
-                                 radiometer_mv: float = 0.0) -> Dict[str, Any]:
+    def compare_against_reference_run(self, 
+                                      user_o2: float, 
+                                      user_co: float, 
+                                      reference_run_id: str = "B1") -> Dict[str, Any]:
         """
-        Analyze live or simulated sensor telemetry to distinguish true combustion 
-        from sensor anomalies, drift, or normal atmospheric variations.
+        Compare user's custom sensor readings against a stated BASS-II reference run.
         """
-        deviations = []
-        severity = "NORMAL"
-        confidence = 0.95
-        fire_probability = 0.05
-        recommendations = []
+        ref_id = reference_run_id.upper().strip()
+        ref = REFERENCE_RUNS.get(ref_id, REFERENCE_RUNS["B1"])
 
-        # 1. CO Assessment (primary sensitive marker)
-        co_delta = current_co_ppm - ISS_BASELINES["co_nominal_ppm"]
-        if current_co_ppm >= ISS_BASELINES["co_emergency_ppm"]:
-            severity = "CRITICAL"
-            fire_probability = 0.96
-            deviations.append(f"EXTREME DANGER: Cabin CO level is {current_co_ppm:.1f} ppm (critical threshold: 100 ppm).")
-            recommendations.append("Immediate crew action: Don emergency oxygen masks (PBA).")
-            recommendations.append("Isolate module ventilation and prepare fire extinguisher.")
-        elif current_co_ppm >= ISS_BASELINES["co_warning_ppm"]:
-            severity = "WARNING"
-            fire_probability = 0.85
-            deviations.append(f"WARNING: CO elevation to {current_co_ppm:.1f} ppm exceeds safety threshold (50 ppm).")
-            recommendations.append("Verify visual / thermal sensors in active experiments.")
-            recommendations.append("Inspect MSG glovebox seals and duct ventilation.")
-        elif current_co_ppm >= ISS_BASELINES["co_caution_ppm"]:
-            severity = "CAUTION"
-            fire_probability = 0.45
-            deviations.append(f"CAUTION: Measurable CO ({current_co_ppm:.1f} ppm) above nominal background (< 2 ppm).")
-            recommendations.append("Cross-check redundant CSA-CP sensors to rule out sensor drift.")
+        o2_diff = round(user_o2 - ref["final_o2"], 2)
+        co_diff = round(user_co - ref["co_final"], 1)
 
-        # 2. O2 Assessment
-        if current_o2_pct < 18.0:
-            deviations.append(f"O2 Depletion ({current_o2_pct:.1f}%): Hypoxia risk for crew; below microgravity combustion self-sustaining limit.")
-            if severity != "CRITICAL":
-                severity = "WARNING"
-        elif current_o2_pct > 23.5:
-            deviations.append(f"O2 Enrichment ({current_o2_pct:.1f}%): Severe hyperoxia hazard; material ignition delay is sharply reduced.")
-            severity = "CRITICAL"
+        findings = []
+        if abs(o2_diff) > 1.0:
+            direction = "lower" if o2_diff < 0 else "higher"
+            findings.append(f"O₂ concentration ({user_o2:.1f}%) is {abs(o2_diff):.1f}% {direction} than reference run {ref['test_id']} ({ref['final_o2']}%).")
+        else:
+            findings.append(f"O₂ concentration ({user_o2:.1f}%) is close to reference run {ref['test_id']} ({ref['final_o2']}%).")
 
-        # 3. Radiometer & CO Correlation
-        if radiometer_mv > 50.0 and current_co_ppm > 10.0:
-            deviations.append(f"Active IR Radiation: Radiometer signal ({radiometer_mv:.1f} mV) corroborates thermal flame heat release.")
-            fire_probability = max(fire_probability, 0.92)
-        elif radiometer_mv > 50.0 and current_co_ppm <= 2.0:
-            deviations.append("Thermal anomaly without CO elevation: Likely electrical heater or illuminator saturation rather than open flame.")
-            fire_probability = min(fire_probability, 0.25)
-
-        if not deviations:
-            deviations.append("All sensor channels within nominal ISS atmospheric baseline tolerances.")
-            recommendations.append("Continue standard orbital environment monitoring.")
+        if co_diff > 10.0:
+            findings.append(f"Carbon Monoxide ({user_co:.1f} ppm) exceeds reference run {ref['test_id']} ({ref['co_final']} ppm) by {co_diff:.1f} ppm.")
+        elif co_diff < -10.0:
+            findings.append(f"Carbon Monoxide ({user_co:.1f} ppm) is {abs(co_diff):.1f} ppm lower than reference run {ref['test_id']} ({ref['co_final']} ppm).")
+        else:
+            findings.append(f"Carbon Monoxide ({user_co:.1f} ppm) is comparable to reference run {ref['test_id']} ({ref['co_final']} ppm).")
 
         return {
-            "telemetry": {
-                "o2_pct": current_o2_pct,
-                "co_ppm": current_co_ppm,
-                "co2_pct": current_co2_pct,
-                "airflow_cm_s": airflow_cm_s,
-                "radiometer_mv": radiometer_mv
+            "reference_run": {
+                "test_id": ref["test_id"],
+                "pi": ref["pi"],
+                "material": ref["material"],
+                "baseline_o2": ref["final_o2"],
+                "baseline_co_ppm": ref["co_final"],
+                "source": ref["source"]
             },
-            "hazard_severity": severity,
-            "fire_event_probability": round(fire_probability, 2),
-            "assessment_confidence": round(confidence, 2),
-            "detected_deviations": deviations,
-            "action_recommendations": recommendations,
-            "disclaimer": "AI sensor assessment advisory only. Certified mission flight rules and crew safety override automated tools."
+            "user_telemetry": {
+                "o2_pct": user_o2,
+                "co_ppm": user_co
+            },
+            "comparison_findings": findings
         }
 
-    def generate_chat_response(self, user_message: str, chat_history: List[Dict[str, str]] = None) -> Dict[str, Any]:
+    def answer_question(self, query: str) -> Dict[str, Any]:
         """
-        Generate grounded, domain-specific Astronaut AI Assistant response.
+        Ground responses in cited facts. If off-topic or unsupported, explicitly refuse.
         """
-        clean_msg = user_message.strip()
-        
-        # Check if user query asks about a specific experiment ID
-        exp = self.find_specific_experiment(clean_msg)
-        if exp:
-            vid_status = "Linked video available in Flame Studio." if exp["has_video"] else "No video recorded for this run."
-            reply = (
-                f"### NASA PSI-25 Experiment Record: **{exp['test_id']}**\n\n"
-                f"- **Principal Investigator:** {exp['pi']}\n"
-                f"- **Material:** {exp['fuel_material_raw']} ({exp['material_category']})\n"
-                f"- **Dimensions:** Thickness {exp['thickness_mm']} mm, Width {exp['width_cm']} cm\n"
-                f"- **Flow Conditions:** {exp['airflow_velocity_cm_s']} cm/s ({exp['flow_geometry']} geometry, Restrictor {exp['flow_restrictor']})\n"
-                f"- **Atmosphere:** Initial O₂ {exp['calibrated_initial_o2_vol_pct']}%, Final O₂ {exp['calibrated_final_o2_vol_pct']}%\n"
-                f"- **Sensors:** ΔCO = {exp['co_delta_ppm']} ppm, Burn Duration = {exp['burn_duration_s']} s\n"
-                f"- **Outcome:** **{exp['outcome_description']}**\n\n"
-                f"**NASA Flight Observations:**\n> {exp['observations']}\n\n"
-                f"*{vid_status}*"
-            )
+        q = query.lower().strip()
+
+        # 1. Check for specific test inquiries in 129 flight experiments
+        m_test = re.search(r"\btest\s*([bfpomt]\d+[a-z]?)\b", q)
+        if not m_test:
+            m_test = re.search(r"\b([bfpmt]\d{1,2}[a-z]?)\b", q)
+        if m_test and self.experiments_df is not None:
+            tid = m_test.group(1).upper()
+            if tid in self.experiments_df["test_id"].values:
+                row = self.experiments_df[self.experiments_df["test_id"] == tid].iloc[0]
+                ans = (
+                    f"**NASA Flight Experiment #{row['test_id']} ({row['pi']}):**\n\n"
+                    f"- **Fuel Material:** {row['fuel_material_raw']} ({row['material_category']})\n"
+                    f"- **Dimensions:** Thickness {row['thickness_mm']} mm, Width {row['width_cm']} cm\n"
+                    f"- **Measured Conditions:** Initial O₂ {row['calibrated_initial_o2_vol_pct']}%, Final O₂ {row['calibrated_final_o2_vol_pct']}%, Airflow {row['airflow_velocity_cm_s']} cm/s\n"
+                    f"- **Measured Sensors:** ΔO₂ = {row['o2_delta_vol_pct']}%, ΔCO = {row['co_delta_ppm']} ppm, Duration = {row['burn_duration_s']}s\n"
+                    f"- **Documented Outcome:** {row['outcome']}\n"
+                    f"- **Flight Observations:** \"{row['observations']}\"\n\n"
+                    f"**Source Document:** NASA/TM-20210011385, Appendix A (BASS-II Test Matrix)"
+                )
+                return {
+                    "response": ans,
+                    "source_page": "NASA/TM-20210011385, Appendix A",
+                    "refused": False
+                }
+
+        # 2. Check for matching cited facts
+        best_fact = None
+        best_score = 0
+        for fact in self.facts:
+            score = sum(1 for kw in fact["keywords"] if kw in q)
+            if score > best_score:
+                best_score = score
+                best_fact = fact
+
+        if best_fact and best_score >= 1:
+            ans = f"{best_fact['fact']}\n\n**Source Document:** {best_fact['source']}"
             return {
-                "response": reply,
-                "grounding_sources": [f"NASA PSI-25 BASS-II Test Matrix & Summary Report (Test {exp['test_id']})"],
-                "experiment_id": exp["test_id"],
-                "confidence": 0.98
+                "response": ans,
+                "source_page": best_fact["source"],
+                "refused": False
             }
 
-        # Check for sensor-related input
-        co_match = re.search(r"(\d+(?:\.\d+)?)\s*(?:ppm|co\b)", clean_msg, re.IGNORECASE)
-        o2_match = re.search(r"(\d+(?:\.\d+)?)\s*%", clean_msg)
-        if ("sensor" in clean_msg.lower() or "telemetry" in clean_msg.lower() or "reading" in clean_msg.lower()) and (co_match or o2_match):
-            co_val = float(co_match.group(1)) if co_match else 0.0
-            o2_val = float(o2_match.group(1)) if o2_match else 21.0
-            diag = self.analyze_sensor_telemetry(current_o2_pct=o2_val, current_co_ppm=co_val)
-            
-            reply = (
-                f"### Sensor Telemetry Analysis\n\n"
-                f"- **Hazard Status:** **{diag['hazard_severity']}** (Fire Probability: {diag['fire_event_probability'] * 100:.0f}%)\n"
-                f"- **Evaluated Parameters:** O₂ = {o2_val}%, CO = {co_val} ppm\n\n"
-                f"**Detected Anomalies & Implications:**\n" +
-                "\n".join([f"- {d}" for d in diag['detected_deviations']]) + "\n\n"
-                f"**Safety Protocols:**\n" +
-                "\n".join([f"1. {a}" if i==0 else f"2. {a}" for i, a in enumerate(diag['action_recommendations'])]) + "\n\n"
-                f"> **Safety Notice:** {diag['disclaimer']}"
+        # 3. Check for telemetry / comparison queries
+        co_m = re.search(r"(\d+(?:\.\d+)?)\s*(?:ppm|co\b)", q)
+        o2_m = re.search(r"(\d+(?:\.\d+)?)\s*%", q)
+        if ("sensor" in q or "compare" in q or "reading" in q) and (co_m or o2_m):
+            u_co = float(co_m.group(1)) if co_m else 0.0
+            u_o2 = float(o2_m.group(1)) if o2_m else 21.0
+            ref_id = "M5" if "m5" in q else "B1"
+            comp = self.compare_against_reference_run(u_o2, u_co, ref_id)
+            ans = (
+                f"**Telemetry Comparison Against Stated Reference Run #{comp['reference_run']['test_id']} ({comp['reference_run']['pi']}):**\n\n"
+                f"- Stated Reference Baseline: {comp['reference_run']['material']}, {comp['reference_run']['baseline_o2']}% O₂, {comp['reference_run']['baseline_co_ppm']} ppm CO\n"
+                f"- User Telemetry: {u_o2}% O₂, {u_co} ppm CO\n\n"
+                f"**Findings:**\n" +
+                "\n".join(f"- {f}" for f in comp['comparison_findings']) +
+                f"\n\n**Source Reference:** {comp['reference_run']['source']}"
             )
             return {
-                "response": reply,
-                "grounding_sources": ["NASA CSA-CP Sensor Operating Manual", "ISS Emergency Flight Rules Chapter 3"],
-                "confidence": diag["assessment_confidence"]
+                "response": ans,
+                "source_page": comp["reference_run"]["source"],
+                "refused": False
             }
 
-        # Knowledge retrieval
-        retrieved = self.retrieve_context(clean_msg)
-        if retrieved:
-            primary_doc = retrieved[0]
-            sources = [doc["source"] for doc in retrieved]
-            
-            # Synthesize grounded answer
-            reply = (
-                f"### {primary_doc['title']}\n\n"
-                f"{primary_doc['content']}\n\n"
-            )
-            if len(retrieved) > 1:
-                reply += f"**Complementary Scientific Context:**\n{retrieved[1]['content']}\n\n"
-
-            reply += f"*(Grounded in: {', '.join(sources)})*"
-            return {
-                "response": reply,
-                "grounding_sources": sources,
-                "confidence": 0.92
-            }
-
-        # Fallback comprehensive domain overview
+        # 4. Strict Refusal for off-topic / unsupported questions (Requirement 2)
         return {
             "response": (
-                "I am the FIREWISE-X Astronaut Fire Safety Assistant, grounded in data from NASA's PSI-25 "
-                "BASS-II microgravity combustion flight experiments.\n\n"
-                "I can assist you with:\n"
-                "1. **Combustion Physics:** Explaining microgravity flame dynamics, lack of buoyant convection, and the low-flow radiative extinction limit.\n"
-                "2. **Specific Test Inquiries:** Ask about any BASS-II test (e.g., 'What happened in test B1 or T1?').\n"
-                "3. **Sensor Interpretation:** Evaluate simulated or real telemetry (e.g., 'Analyze readings: O2 18.5%, CO 35 ppm').\n"
-                "4. **Material Flammability:** Compare space materials (PMMA thin films, thick slabs, rods, SIBAL cotton-fiberglass, and fire-retardant Nomex III).\n\n"
-                "What would you like to investigate?"
+                "I don't have data on that. I only answer questions directly grounded in the "
+                "129 NASA PSI-25 (BASS-II) flight combustion experiments."
             ),
-            "grounding_sources": ["NASA PSI-25 BASS-II Knowledge Base"],
-            "confidence": 0.90
+            "source_page": None,
+            "refused": True
         }
 
 if __name__ == "__main__":
-    assistant = AstronautAssistantRAG()
-    res1 = assistant.generate_chat_response("What happened in test B12?")
-    print("--- Test B12 Query ---")
-    print(res1["response"])
-    print("\n--- Sensor Anomaly Query ---")
-    res2 = assistant.generate_chat_response("Analyze sensor reading: O2 18.2%, CO 65 ppm")
-    print(res2["response"])
+    ast = GroundedAstronautAssistant()
+    print("--- Test Fact Query (B1) ---")
+    r1 = ast.answer_question("Tell me about test B1 O2 readings")
+    print(r1["response"])
+    print("\n--- Test Comparison Query ---")
+    r2 = ast.answer_question("Compare my readings O2 19.5% and CO 45 ppm with test B1")
+    print(r2["response"])
+    print("\n--- Test Off-Topic Refusal ---")
+    r3 = ast.answer_question("How do I bake bread in space?")
+    print(r3["response"])
+    print("Refused?", r3["refused"])

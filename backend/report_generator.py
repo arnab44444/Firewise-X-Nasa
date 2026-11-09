@@ -175,14 +175,14 @@ def build_pdf_report(report_data: dict) -> bytes:
     story.append(t3)
     story.append(Spacer(1, 10))
 
-    # 5. AI Prediction & 6. Model Explanation
-    story.append(Paragraph("5. AI Model Prediction & 6. Model Explanation", h2_style))
+    # 5. Grounded BASS-II Flight Lookup & 6. Physical Explanation
+    story.append(Paragraph("5. Grounded BASS-II Flight Lookup & 6. Physical Explanation", h2_style))
     pred = report_data.get("prediction", {})
-    story.append(Paragraph(f"<b>Predicted Combustion Outcome:</b> <font color='#EA580C'><b>{pred.get('outcome_label', 'Radiative Quenching Extinction')}</b></font> (Confidence: {pred.get('confidence', 0.88)*100:.1f}%)", body_style))
+    story.append(Paragraph(f"<b>Observed Flight Outcome:</b> <font color='#EA580C'><b>{pred.get('outcome_label', 'Radiative Quenching Extinction')}</b></font>", body_style))
     story.append(Spacer(1, 4))
-    story.append(Paragraph(f"<b>Predicted Burn Duration:</b> {pred.get('predicted_duration_s', 45.0)} s | <b>Spread Rate:</b> {pred.get('predicted_spread_rate_cm_s', 0.08)} ± {pred.get('predicted_spread_rate_uncertainty', 0.04)} cm/s | <b>Expected ΔCO:</b> {pred.get('predicted_co_delta_ppm', 25.0)} ppm", body_style))
+    story.append(Paragraph(f"<b>Empirically Measured Burn Duration:</b> {pred.get('measured_burn_duration_s', pred.get('predicted_duration_s', 45.0))} s | <b>Spread Rate:</b> {pred.get('measured_spread_rate_cm_s', pred.get('predicted_spread_rate_cm_s', 0.08))} cm/s | <b>Measured ΔCO:</b> {pred.get('measured_co_delta_ppm', pred.get('predicted_co_delta_ppm', 6.0))} ppm", body_style))
     story.append(Spacer(1, 4))
-    story.append(Paragraph(f"<b>Scientific Rationale:</b> {pred.get('scientific_rationale', 'At the evaluated conditions, lack of natural buoyancy leads to soot accumulation and high radiative emission, exceeding the chemical reaction rate.')}", callout_style))
+    story.append(Paragraph(f"<b>Physical Combustion Rationale:</b> {pred.get('scientific_rationale', pred.get('factual_summary', 'At the evaluated conditions, lack of natural buoyancy leads to soot accumulation and high radiative emission, exceeding the chemical reaction rate.'))}", callout_style))
     story.append(Spacer(1, 10))
 
     # 7. Experimental Comparison

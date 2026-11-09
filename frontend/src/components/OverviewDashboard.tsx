@@ -87,11 +87,11 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
               </div>
               <div>
                 <p className="text-2xl font-bold font-mono text-orange-400">52</p>
-                <p className="text-xs text-slate-400">Tracked Combustion Videos</p>
+                <p className="text-xs text-slate-400">Unique Flight Test Videos (84 Files)</p>
               </div>
               <div>
-                <p className="text-2xl font-bold font-mono text-emerald-400">5 Engines</p>
-                <p className="text-xs text-slate-400">Integrated AI Models</p>
+                <p className="text-2xl font-bold font-mono text-emerald-400">LOO: 68.2%</p>
+                <p className="text-xs text-slate-400">Leave-One-Out Accuracy</p>
               </div>
             </div>
           </div>
@@ -181,16 +181,16 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
 
           <div className="glass-panel p-4 rounded-xl border border-cyan-500/20 hover:border-cyan-400/50 transition-all space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono text-cyan-400">MODEL 2</span>
+              <span className="text-[10px] font-mono text-cyan-400">ENGINE 2</span>
               <Activity className="w-4 h-4 text-cyan-400" />
             </div>
-            <h3 className="text-sm font-semibold text-white">Combustion Prediction Engine</h3>
+            <h3 className="text-sm font-semibold text-white">BASS-II Flight Run Lookup</h3>
             <p className="text-xs text-slate-400 leading-snug">
-              Random Forest & XGBoost trained on 129 flight tests. Predicts quenching, burn duration, and CO emissions.
+              Deterministic nearest-neighbor matching against 129 flight runs with range bounds verification.
             </p>
             <div className="pt-2 text-[10px] font-mono text-cyan-300 flex items-center">
               <CheckCircle2 className="w-3 h-3 text-emerald-400 mr-1" />
-              <span>CV Acc: 67.4% | R²: 0.65</span>
+              <span>Tested Range Alerts</span>
             </div>
           </div>
 

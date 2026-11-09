@@ -1,32 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Activity, 
-  Sparkles, 
   Layers, 
   ShieldCheck, 
   Sliders, 
   AlertTriangle, 
   ArrowRight, 
   RotateCcw, 
-  Plus, 
-  Trash2, 
   Download, 
   FileText,
-  Info
+  Info,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
-import { 
-  ResponsiveContainer, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip 
-} from 'recharts';
-import { ScenarioInputData, PredictionResult } from '../types';
+import { ScenarioInputData, LookupResponse } from '../types';
 
 export const PreMissionAssessment: React.FC = () => {
-  // Mode: 'single' or 'compare'
   const [mode, setMode] = useState<'single' | 'compare'>('single');
 
   // Single scenario state
@@ -35,27 +24,24 @@ export const PreMissionAssessment: React.FC = () => {
     thickness_mm: 0.2,
     airflow_velocity_cm_s: 5.0,
     oxygen_vol_pct: 21.0,
-    width_cm: 2.0,
-    flow_restrictor: 2,
   });
 
-  const [prediction, setPrediction] = useState<PredictionResult | null>(null);
+  const [lookupResult, setLookupResult] = useState<LookupResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Multi-scenario comparison state
-  const [scenariosList, setScenariosList] = useState<Array<{ label: string; data: ScenarioInputData }>>([
+  const [scenariosList] = useState<Array<{ label: string; data: ScenarioInputData }>>([
     {
       label: 'Scenario A (Nominal Cabin)',
-      data: { material: 'PMMA Thin Film', thickness_mm: 0.2, airflow_velocity_cm_s: 5.0, oxygen_vol_pct: 21.0, width_cm: 2.0, flow_restrictor: 2 }
+      data: { material: 'PMMA Thin Film', thickness_mm: 0.2, airflow_velocity_cm_s: 5.0, oxygen_vol_pct: 21.0 }
     },
     {
       label: 'Scenario B (Reduced O₂ Purge)',
-      data: { material: 'PMMA Thin Film', thickness_mm: 0.2, airflow_velocity_cm_s: 2.0, oxygen_vol_pct: 17.5, width_cm: 2.0, flow_restrictor: 2 }
+      data: { material: 'PMMA Thin Film', thickness_mm: 0.2, airflow_velocity_cm_s: 1.5, oxygen_vol_pct: 17.5 }
     },
     {
       label: 'Scenario C (High Airflow Draft)',
-      data: { material: 'PMMA Thin Film', thickness_mm: 0.2, airflow_velocity_cm_s: 25.0, oxygen_vol_pct: 21.0, width_cm: 2.0, flow_restrictor: 0 }
+      data: { material: 'PMMA Thin Film', thickness_mm: 0.2, airflow_velocity_cm_s: 25.0, oxygen_vol_pct: 21.0 }
     }
   ]);
   const [comparisonResults, setComparisonResults] = useState<any[] | null>(null);
@@ -72,20 +58,25 @@ export const PreMissionAssessment: React.FC = () => {
     { name: 'PMMA Sphere', defaultTh: 40.0, desc: '4 cm spherical PMMA section' },
   ];
 
-  const runPrediction = async () => {
+  // Run real lookup automatically when sliders move (Requirement 1)
+  useEffect(() => {
+    executeLookup(scenario);
+  }, [scenario.material, scenario.thickness_mm, scenario.airflow_velocity_cm_s, scenario.oxygen_vol_pct]);
+
+  const executeLookup = async (sc: ScenarioInputData) => {
     setLoading(true);
-    setError(null);
     try {
       const res = await fetch('/api/assessment/predict', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(scenario),
+        body: JSON.stringify(sc),
       });
-      if (!res.ok) throw new Error('Prediction API failed.');
-      const data: PredictionResult = await res.json();
-      setPrediction(data);
-    } catch (err: any) {
-      setError(err.message || 'Error generating prediction.');
+      if (res.ok) {
+        const data: LookupResponse = await res.json();
+        setLookupResult(data);
+      }
+    } catch (err) {
+      console.error('Error fetching lookup:', err);
     } finally {
       setLoading(false);
     }
@@ -101,26 +92,35 @@ export const PreMissionAssessment: React.FC = () => {
           scenarios: scenariosList.map(s => s.data)
         }),
       });
-      if (!res.ok) throw new Error('Scenario comparison failed.');
-      const data = await res.json();
-      setComparisonResults(data.comparisons);
-    } catch (err: any) {
-      setError(err.message || 'Error running scenario comparison.');
+      if (res.ok) {
+        const data = await res.json();
+        setComparisonResults(data.comparisons);
+      }
+    } catch (err) {
+      console.error('Error comparing scenarios:', err);
     } finally {
       setCompareLoading(false);
     }
   };
 
   const handleDownloadPDF = async () => {
-    if (!prediction) return;
+    if (!lookupResult) return;
     try {
+      const primary = lookupResult.matched_historical_runs[0];
       const res = await fetch('/api/research/reports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: `Pre-Mission Assessment: ${scenario.material}`,
+          test_id: primary ? primary.test_id : 'B1',
           scenario: scenario,
-          prediction: prediction.prediction
+          prediction: {
+            outcome_label: lookupResult.lookup_result.outcome_label,
+            measured_burn_duration_s: lookupResult.lookup_result.measured_burn_duration_s,
+            measured_spread_rate_cm_s: lookupResult.lookup_result.measured_spread_rate_cm_s,
+            measured_co_delta_ppm: lookupResult.lookup_result.measured_co_delta_ppm,
+            factual_summary: lookupResult.lookup_result.factual_summary
+          }
         })
       });
       if (!res.ok) throw new Error('Failed to generate report PDF.');
@@ -128,7 +128,7 @@ export const PreMissionAssessment: React.FC = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `FIREWISE_X_PreMission_${scenario.material.replace(/\s+/g, '_')}.pdf`;
+      a.download = `FIREWISE_X_Assessment_${scenario.material.replace(/\s+/g, '_')}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err: any) {
@@ -146,7 +146,7 @@ export const PreMissionAssessment: React.FC = () => {
             <span>Pre-Mission Combustion Assessment</span>
           </h2>
           <p className="text-xs text-slate-400">
-            Simulate and predict microgravity fire behavior, extinction thresholds, and toxic gas generation
+            Real BASS-II flight run lookup engine matching user conditions against 129 documented ISS microgravity experiments.
           </p>
         </div>
 
@@ -159,7 +159,7 @@ export const PreMissionAssessment: React.FC = () => {
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            Single Scenario
+            Interactive Lookup
           </button>
           <button
             onClick={() => {
@@ -179,12 +179,12 @@ export const PreMissionAssessment: React.FC = () => {
 
       {mode === 'single' ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Form: Parameter Controls */}
+          {/* Left Form: Sliders & Controls */}
           <div className="lg:col-span-5 glass-panel p-6 rounded-2xl border border-cyan-500/20 space-y-5">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <span className="text-xs font-mono font-bold text-cyan-300 uppercase flex items-center space-x-1.5">
                 <Sliders className="w-4 h-4 text-cyan-400" />
-                <span>Spacecraft Combustion Conditions</span>
+                <span>Mission Input Parameters</span>
               </span>
               <button
                 onClick={() => setScenario({
@@ -192,11 +192,9 @@ export const PreMissionAssessment: React.FC = () => {
                   thickness_mm: 0.2,
                   airflow_velocity_cm_s: 5.0,
                   oxygen_vol_pct: 21.0,
-                  width_cm: 2.0,
-                  flow_restrictor: 2,
                 })}
                 className="text-[11px] font-mono text-slate-400 hover:text-cyan-300 flex items-center space-x-1"
-                title="Reset to NASA standard baseline"
+                title="Reset to nominal"
               >
                 <RotateCcw className="w-3 h-3" />
                 <span>Reset</span>
@@ -206,7 +204,7 @@ export const PreMissionAssessment: React.FC = () => {
             {/* Material Selector */}
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-300 block">
-                Fuel Material Type
+                Fuel Material
               </label>
               <select
                 value={scenario.material}
@@ -244,8 +242,9 @@ export const PreMissionAssessment: React.FC = () => {
                 className="w-full accent-cyan-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
               />
               <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                <span>0.1 mm (Thin Film)</span>
-                <span>15.0 mm (Thick Rod/Slab)</span>
+                <span>0.1 mm (Thin)</span>
+                <span>12.7 mm (BASS-II Max Tested)</span>
+                <span>15.0 mm (Extreme)</span>
               </div>
             </div>
 
@@ -254,15 +253,14 @@ export const PreMissionAssessment: React.FC = () => {
               <div className="flex justify-between text-xs">
                 <span className="text-slate-300">Ambient Oxygen (O₂):</span>
                 <span className={`font-mono font-bold ${
-                  scenario.oxygen_vol_pct < 18 ? 'text-blue-400' :
-                  scenario.oxygen_vol_pct > 24 ? 'text-rose-400' : 'text-emerald-400'
+                  scenario.oxygen_vol_pct < 15.0 || scenario.oxygen_vol_pct > 22.5 ? 'text-rose-400' : 'text-emerald-400'
                 }`}>
                   {scenario.oxygen_vol_pct}% by vol
                 </span>
               </div>
               <input
                 type="range"
-                min={15.0}
+                min={12.0}
                 max={30.0}
                 step={0.5}
                 value={scenario.oxygen_vol_pct}
@@ -270,9 +268,10 @@ export const PreMissionAssessment: React.FC = () => {
                 className="w-full accent-cyan-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
               />
               <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                <span>15.0% (Near Quench)</span>
-                <span>21.0% (ISS Norm)</span>
-                <span>30.0% (Enriched)</span>
+                <span>14% (Tested Min)</span>
+                <span>21% (Nominal)</span>
+                <span>22.5% (Tested Max)</span>
+                <span>30% (Extreme)</span>
               </div>
             </div>
 
@@ -280,12 +279,16 @@ export const PreMissionAssessment: React.FC = () => {
             <div className="space-y-1.5">
               <div className="flex justify-between text-xs">
                 <span className="text-slate-300">Duct Airflow Velocity:</span>
-                <span className="font-mono text-orange-400 font-bold">{scenario.airflow_velocity_cm_s} cm/s</span>
+                <span className={`font-mono font-bold ${
+                  scenario.airflow_velocity_cm_s > 45.0 ? 'text-rose-400' : 'text-orange-400'
+                }`}>
+                  {scenario.airflow_velocity_cm_s} cm/s
+                </span>
               </div>
               <input
                 type="range"
                 min={0.5}
-                max={45.0}
+                max={55.0}
                 step={0.5}
                 value={scenario.airflow_velocity_cm_s}
                 onChange={(e) => setScenario({ ...scenario, airflow_velocity_cm_s: parseFloat(e.target.value) })}
@@ -293,171 +296,113 @@ export const PreMissionAssessment: React.FC = () => {
               />
               <div className="flex justify-between text-[10px] text-slate-500 font-mono">
                 <span>0.5 cm/s (Quiescent)</span>
-                <span>5.0 cm/s (Standard)</span>
-                <span>45.0 cm/s (High Draft)</span>
+                <span>45.0 cm/s (Tested Max)</span>
+                <span>55.0 cm/s (Extreme)</span>
               </div>
             </div>
 
-            {/* Flow Restrictor Plate */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-300 block">
-                Perforated Flow Restrictor
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { val: 0, label: '0 (High Flow)' },
-                  { val: 1, label: '1 (Med Flow)' },
-                  { val: 2, label: '2 (Low Flow)' },
-                ].map(r => (
-                  <button
-                    key={r.val}
-                    type="button"
-                    onClick={() => setScenario({ ...scenario, flow_restrictor: r.val })}
-                    className={`py-2 px-2 rounded-xl text-xs font-mono border transition-all ${
-                      scenario.flow_restrictor === r.val
-                        ? 'bg-cyan-500/20 border-cyan-400 text-cyan-200'
-                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
-                    }`}
-                  >
-                    {r.label}
-                  </button>
+            {/* Out-of-Range Warning Banner (Requirement 1) */}
+            {lookupResult && !lookupResult.range_validation.within_tested_envelope && (
+              <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/50 space-y-2 text-xs">
+                <div className="flex items-center space-x-2 text-rose-300 font-bold font-mono">
+                  <AlertTriangle className="w-4 h-4 text-rose-400" />
+                  <span>WARNING: EXTREME INPUT OUTSIDE TESTED BASS-II RANGE</span>
+                </div>
+                {lookupResult.range_validation.range_warnings.map((w, i) => (
+                  <p key={i} className="text-[11px] text-rose-200 leading-tight">
+                    • {w}
+                  </p>
                 ))}
               </div>
-            </div>
-
-            <button
-              onClick={runPrediction}
-              disabled={loading}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-sm shadow-lg shadow-cyan-500/25 flex items-center justify-center space-x-2 transition-all cursor-pointer disabled:opacity-50"
-            >
-              {loading ? (
-                <span>Evaluating AI Physics Models...</span>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 text-orange-300" />
-                  <span>Execute Pre-Mission Assessment</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
+            )}
           </div>
 
-          {/* Right Area: Prediction Results & Explainable AI */}
+          {/* Right Area: Lookup Results (Measured Data Only) */}
           <div className="lg:col-span-7 space-y-6">
-            {prediction ? (
+            {lookupResult ? (
               <div className="space-y-6">
-                {/* Outcome Banner */}
-                <div className={`glass-panel p-6 rounded-2xl border ${
-                  prediction.prediction.outcome_code.includes('quench') ? 'border-blue-500/40 bg-blue-950/20' :
-                  prediction.prediction.outcome_code.includes('sustained') ? 'border-amber-500/40 bg-amber-950/20' :
-                  'border-rose-500/40 bg-rose-950/20'
-                } space-y-3`}>
+                {/* Primary Lookup Result Banner */}
+                <div className="glass-panel p-6 rounded-2xl border border-cyan-500/30 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono font-bold tracking-wider text-slate-400 uppercase">
-                      PREDICTED OUTCOME
+                    <span className="text-xs font-mono font-bold text-slate-400 uppercase">
+                      CLOSEST EMPIRICAL BASS-II RUN: #{lookupResult.lookup_result.primary_match_test_id}
                     </span>
-                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-900/80 border border-slate-700 text-cyan-300">
-                      CONFIDENCE: {(prediction.prediction.confidence * 100).toFixed(0)}%
+                    <span className="text-xs font-mono px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-cyan-300">
+                      EMPIRICAL LOOKUP
                     </span>
                   </div>
 
-                  <h3 className={`text-2xl font-black ${
-                    prediction.prediction.outcome_code.includes('quench') ? 'text-blue-300' :
-                    prediction.prediction.outcome_code.includes('sustained') ? 'text-amber-300' : 'text-rose-300'
-                  }`}>
-                    {prediction.prediction.outcome_label}
+                  <h3 className="text-xl font-bold text-white">
+                    {lookupResult.lookup_result.outcome_label}
                   </h3>
 
                   <p className="text-xs text-slate-300 leading-relaxed">
-                    {prediction.prediction.scientific_rationale}
+                    {lookupResult.lookup_result.factual_summary}
                   </p>
                 </div>
 
-                {/* Metric Predictions Grid */}
+                {/* Primary Measured Flight Metrics */}
                 <div className="grid grid-cols-3 gap-4">
                   <div className="glass-panel p-4 rounded-xl border border-slate-800">
-                    <p className="text-[10px] font-mono text-slate-400">FLAME SPREAD RATE</p>
-                    <p className="text-xl font-bold font-mono text-cyan-300">
-                      {prediction.prediction.predicted_spread_rate_cm_s} <span className="text-xs text-slate-400">cm/s</span>
-                    </p>
-                    <p className="text-[10px] text-slate-500 font-mono">
-                      ± {prediction.prediction.predicted_spread_rate_uncertainty} cm/s (Tree STD)
-                    </p>
-                  </div>
-
-                  <div className="glass-panel p-4 rounded-xl border border-slate-800">
-                    <p className="text-[10px] font-mono text-slate-400">ESTIMATED BURN TIME</p>
+                    <span className="text-[10px] font-mono text-slate-400 block">MEASURED BURN DURATION</span>
                     <p className="text-xl font-bold font-mono text-orange-400">
-                      {prediction.prediction.predicted_duration_s} <span className="text-xs text-slate-400">s</span>
+                      {lookupResult.lookup_result.measured_burn_duration_s} <span className="text-xs text-slate-400">s</span>
                     </p>
-                    <p className="text-[10px] text-slate-500 font-mono">
-                      Until extinction / burnout
-                    </p>
+                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">Recorded ISS burn time</p>
                   </div>
 
                   <div className="glass-panel p-4 rounded-xl border border-slate-800">
-                    <p className="text-[10px] font-mono text-slate-400">EXPECTED ΔCO EMISSION</p>
+                    <span className="text-[10px] font-mono text-slate-400 block">MEASURED SPREAD SPEED</span>
+                    <p className="text-xl font-bold font-mono text-cyan-300">
+                      {lookupResult.lookup_result.measured_spread_rate_cm_s} <span className="text-xs text-slate-400">cm/s</span>
+                    </p>
+                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">Calibrated flame-front progression</p>
+                  </div>
+
+                  <div className="glass-panel p-4 rounded-xl border border-slate-800">
+                    <span className="text-[10px] font-mono text-slate-400 block">MEASURED ΔCO PRODUCED</span>
                     <p className="text-xl font-bold font-mono text-rose-400">
-                      {prediction.prediction.predicted_co_delta_ppm} <span className="text-xs text-slate-400">ppm</span>
+                      {lookupResult.lookup_result.measured_co_delta_ppm} <span className="text-xs text-slate-400">ppm</span>
                     </p>
-                    <p className="text-[10px] text-slate-500 font-mono">
-                      ± {prediction.prediction.predicted_co_uncertainty} ppm
-                    </p>
+                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">CSA-CP chamber sensor</p>
                   </div>
                 </div>
 
-                {/* Explainable AI: Feature Importances */}
-                <div className="glass-panel p-5 rounded-2xl border border-cyan-500/20 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-mono font-bold text-slate-200 uppercase flex items-center space-x-1.5">
-                      <ShieldCheck className="w-4 h-4 text-cyan-400" />
-                      <span>Model 5: Explainable AI Attribution</span>
-                    </h4>
-                    <span className="text-[10px] text-slate-400 font-mono">SHAP Feature Weights</span>
-                  </div>
-
-                  <div className="h-44 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart 
-                        data={prediction.explainability.top_influencing_variables} 
-                        layout="vertical"
-                        margin={{ top: 5, right: 20, left: 80, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                        <XAxis type="number" domain={[0, 0.5]} stroke="#64748b" fontSize={10} />
-                        <YAxis type="category" dataKey="feature" stroke="#94a3b8" fontSize={10} width={110} />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: '#090e24', borderColor: '#00f2fe', fontSize: '11px', borderRadius: '8px' }}
-                        />
-                        <Bar dataKey="importance" fill="#00f2fe" radius={[0, 4, 4, 0]} name="Importance Score" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                {/* Nearest NASA Historical Flight Tests */}
+                {/* Ranked Matched Runs (Requirement 4) */}
                 <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
-                  <h4 className="text-xs font-mono font-bold text-slate-200 uppercase flex items-center space-x-1.5">
-                    <Layers className="w-4 h-4 text-purple-400" />
-                    <span>Corroborating NASA PSI-25 Flight Benchmarks</span>
-                  </h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-mono font-bold text-white uppercase flex items-center space-x-1.5">
+                      <Layers className="w-4 h-4 text-cyan-400" />
+                      <span>Ranked Historical Flight Runs (Requirement 4)</span>
+                    </h4>
+                    <span className="text-[10px] font-mono text-slate-400">
+                      Ranked by: 1) Material Match, 2) |ΔO₂|+|ΔU|+|Δth|, 3) Sensor Completeness
+                    </span>
+                  </div>
 
-                  <div className="space-y-2">
-                    {prediction.explainability.closest_nasa_experiments.map((bench) => (
-                      <div key={bench.test_id} className="p-3 rounded-xl bg-slate-900/70 border border-slate-800 text-xs space-y-1">
+                  <div className="space-y-3">
+                    {lookupResult.matched_historical_runs.map((run, idx) => (
+                      <div key={run.test_id} className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="font-mono font-bold text-cyan-300">
-                            Test #{bench.test_id} ({bench.pi})
-                          </span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/30">
-                            {(bench.similarity_score * 100).toFixed(0)}% MATCH
+                          <div className="flex items-center space-x-2">
+                            <span className="font-mono font-bold text-cyan-300">
+                              Rank #{idx + 1}: Test #{run.test_id} ({run.pi})
+                            </span>
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
+                              ΔO₂: {run.parameter_delta.delta_o2}%, ΔFlow: {run.parameter_delta.delta_airflow} cm/s
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-mono text-slate-400">
+                            {run.paper_reference}
                           </span>
                         </div>
-                        <p className="text-slate-300">
-                          {bench.material} • {bench.actual_airflow} cm/s • {bench.actual_o2}% O₂
+
+                        <p className="text-slate-200">
+                          <strong>Material:</strong> {run.fuel_material_raw} ({run.measured_thickness_mm} mm) • <strong>Tested at:</strong> {run.measured_initial_o2_vol_pct}% O₂, {run.measured_airflow_cm_s} cm/s
                         </p>
-                        <p className="text-[11px] text-slate-400 italic">
-                          "{bench.observations}"
+
+                        <p className="text-[11px] text-slate-400 italic bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
+                          "{run.flight_observations}"
                         </p>
                       </div>
                     ))}
@@ -475,32 +420,25 @@ export const PreMissionAssessment: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="h-96 glass-panel rounded-2xl border border-dashed border-slate-800 flex flex-col items-center justify-center p-8 text-center space-y-3">
-                <Activity className="w-10 h-10 text-cyan-500/40" />
-                <h3 className="text-sm font-semibold text-slate-300">
-                  Ready to Analyze Mission Parameters
-                </h3>
-                <p className="text-xs text-slate-500 max-w-sm">
-                  Configure material, ambient O₂, and ventilation airflow on the left panel, then click "Execute Pre-Mission Assessment" to generate predictions grounded in NASA flight tests.
-                </p>
+              <div className="h-72 glass-panel rounded-2xl border border-dashed border-slate-800 flex items-center justify-center text-xs text-slate-500 font-mono">
+                Adjust sliders on the left to lookup closest BASS-II flight tests.
               </div>
             )}
           </div>
         </div>
       ) : (
-        /* Multi-Scenario Comparator View (Scenario A vs B vs C) */
+        /* Multi-Scenario Comparator View (Requirement 1: Scenarios A, B, C using same lookup) */
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <p className="text-xs text-slate-400">
-              Evaluate how altering spacecraft ventilation and atmospheric O₂ concentration affects combustion risk across parallel mission profiles.
+              Scenarios A, B, and C evaluated using the identical empirical BASS-II lookup. Extreme conditions trigger range warnings.
             </p>
             <button
               onClick={runComparison}
               disabled={compareLoading}
               className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Re-run Multi-Scenario Analysis</span>
+              <span>Refresh Scenario Comparison</span>
             </button>
           </div>
 
@@ -516,7 +454,7 @@ export const PreMissionAssessment: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="space-y-2 text-xs">
+                <div className="space-y-1.5 text-xs">
                   <div className="flex justify-between">
                     <span className="text-slate-400">Material:</span>
                     <span className="text-white font-medium">{sc.data.material}</span>
@@ -538,32 +476,32 @@ export const PreMissionAssessment: React.FC = () => {
                 {comparisonResults && comparisonResults[idx] && (
                   <div className="pt-3 border-t border-slate-800 space-y-3">
                     <div>
-                      <span className="text-[10px] font-mono text-slate-500 block">PREDICTED OUTCOME</span>
-                      <p className={`text-sm font-bold ${
-                        comparisonResults[idx].prediction.outcome_code.includes('quench') ? 'text-blue-400' :
-                        comparisonResults[idx].prediction.outcome_code.includes('sustained') ? 'text-amber-400' : 'text-rose-400'
-                      }`}>
-                        {comparisonResults[idx].prediction.outcome_label}
+                      <span className="text-[10px] font-mono text-slate-500 block">CLOSEST FLIGHT TEST</span>
+                      <p className="text-sm font-bold text-white">
+                        Test #{comparisonResults[idx].lookup_result.primary_match_test_id}
+                      </p>
+                      <p className="text-xs text-orange-300 font-semibold">
+                        {comparisonResults[idx].lookup_result.outcome_label}
                       </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 bg-slate-900/60 p-2.5 rounded-xl border border-slate-800 font-mono text-xs">
                       <div>
-                        <span className="text-[9px] text-slate-500 block">SPREAD RATE</span>
+                        <span className="text-[9px] text-slate-500 block">MEASURED SPREAD</span>
                         <span className="text-cyan-300 font-semibold">
-                          {comparisonResults[idx].prediction.predicted_spread_rate_cm_s} cm/s
+                          {comparisonResults[idx].lookup_result.measured_spread_rate_cm_s} cm/s
                         </span>
                       </div>
                       <div>
-                        <span className="text-[9px] text-slate-500 block">BURN DURATION</span>
+                        <span className="text-[9px] text-slate-500 block">MEASURED BURN</span>
                         <span className="text-orange-300 font-semibold">
-                          {comparisonResults[idx].prediction.predicted_duration_s} s
+                          {comparisonResults[idx].lookup_result.measured_burn_duration_s} s
                         </span>
                       </div>
                     </div>
 
                     <p className="text-[11px] text-slate-400 italic">
-                      "{comparisonResults[idx].prediction.scientific_rationale.slice(0, 110)}..."
+                      "{comparisonResults[idx].lookup_result.factual_summary}"
                     </p>
                   </div>
                 )}

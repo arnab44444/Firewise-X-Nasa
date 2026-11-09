@@ -2,20 +2,16 @@ import React, { useState } from 'react';
 import { 
   FileText, 
   Search, 
-  Filter, 
   Download, 
   Flame, 
-  ExternalLink, 
-  Eye, 
   X, 
-  Sliders, 
   CheckCircle2, 
-  AlertCircle,
-  Clock,
   Layers,
-  ChevronDown
+  FileCheck,
+  BookOpen
 } from 'lucide-react';
-import { Experiment } from '../types';
+import { Experiment, EvidenceCardData } from '../types';
+import { EvidenceCard } from './EvidenceCard';
 
 interface ResearchReportsProps {
   experiments: Experiment[];
@@ -31,6 +27,7 @@ export const ResearchReports: React.FC<ResearchReportsProps> = ({
   const [selectedMaterial, setSelectedMaterial] = useState<string>('ALL');
   const [selectedOutcome, setSelectedOutcome] = useState<string>('ALL');
   const [selectedExperiment, setSelectedExperiment] = useState<Experiment | null>(null);
+  const [selectedEvidence, setSelectedEvidence] = useState<EvidenceCardData | null>(null);
   const [downloadingTestId, setDownloadingTestId] = useState<string | null>(null);
 
   const pis = ['ALL', 'Bhattacharjee', 'Ferkul', 'Fernandez-Pello', 'Miller', 'Olson', "T'ien"];
@@ -60,6 +57,18 @@ export const ResearchReports: React.FC<ResearchReportsProps> = ({
 
     return matchesSearch && matchesPI && matchesMat && matchesOutcome;
   });
+
+  const loadEvidenceCard = async (testId: string) => {
+    try {
+      const res = await fetch(`/api/research/evidence/${testId}`);
+      if (res.ok) {
+        const evData: EvidenceCardData = await res.json();
+        setSelectedEvidence(evData);
+      }
+    } catch (err) {
+      console.error('Error loading evidence card:', err);
+    }
+  };
 
   const handleDownloadPDF = async (exp: Experiment) => {
     setDownloadingTestId(exp.test_id);
@@ -222,13 +231,21 @@ export const ResearchReports: React.FC<ResearchReportsProps> = ({
                   </td>
                   <td className="py-3 px-4 text-right space-x-2" onClick={(e) => e.stopPropagation()}>
                     <button
+                      onClick={() => loadEvidenceCard(exp.test_id)}
+                      className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-white border border-cyan-500/30 inline-flex items-center space-x-1 transition-all cursor-pointer text-[10px]"
+                      title="Open Scientific Evidence Card (Requirement 3)"
+                    >
+                      <FileCheck className="w-3 h-3" />
+                      <span>Evidence</span>
+                    </button>
+                    <button
                       onClick={() => handleDownloadPDF(exp)}
                       disabled={downloadingTestId === exp.test_id}
-                      className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-white border border-slate-700 inline-flex items-center space-x-1 transition-all cursor-pointer"
+                      className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 inline-flex items-center space-x-1 transition-all cursor-pointer text-[10px]"
                       title="Download 9-part Technical Report PDF"
                     >
                       <Download className="w-3 h-3" />
-                      <span>{downloadingTestId === exp.test_id ? 'Building...' : 'PDF'}</span>
+                      <span>{downloadingTestId === exp.test_id ? '...' : 'PDF'}</span>
                     </button>
                   </td>
                 </tr>
@@ -237,6 +254,21 @@ export const ResearchReports: React.FC<ResearchReportsProps> = ({
           </table>
         </div>
       </div>
+
+      {/* Evidence Card Modal (Requirement 3) */}
+      {selectedEvidence && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-3xl relative">
+            <button
+              onClick={() => setSelectedEvidence(null)}
+              className="absolute -top-3 -right-3 z-10 bg-slate-800 text-slate-300 hover:text-white p-1.5 rounded-full border border-slate-700"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <EvidenceCard evidence={selectedEvidence} />
+          </div>
+        </div>
+      )}
 
       {/* Experiment Detail Modal */}
       {selectedExperiment && (

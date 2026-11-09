@@ -385,9 +385,9 @@ export const FlameStudio: React.FC<FlameStudioProps> = ({ videos, initialTestId 
         </div>
       </div>
 
-      {/* Synchronized Playback Controls & Frame Scrubber */}
+      {/* Synchronized Playback Controls & Frame Stepping (Requirement 5) */}
       <div className="glass-panel p-4 rounded-xl border border-cyan-500/20 space-y-3">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           <button
             onClick={togglePlay}
             className="w-10 h-10 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center justify-center transition-all cursor-pointer font-bold shadow-md shadow-cyan-500/20"
@@ -403,24 +403,66 @@ export const FlameStudio: React.FC<FlameStudioProps> = ({ videos, initialTestId 
             <RotateCcw className="w-4 h-4" />
           </button>
 
+          {/* Frame Stepping Buttons (Requirement 5) */}
+          <div className="flex items-center space-x-1 border-l border-r border-slate-800 px-3">
+            <button
+              onClick={() => handleSeek(Math.max(0, currentTime - 5 / 29.97))}
+              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-cyan-300"
+              title="Step back 5 frames"
+            >
+              -5f
+            </button>
+            <button
+              onClick={() => handleSeek(Math.max(0, currentTime - 1 / 29.97))}
+              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-cyan-300"
+              title="Step back 1 frame"
+            >
+              -1f
+            </button>
+            <button
+              onClick={() => handleSeek(Math.min(duration || 45, currentTime + 1 / 29.97))}
+              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-cyan-300"
+              title="Step forward 1 frame"
+            >
+              +1f
+            </button>
+            <button
+              onClick={() => handleSeek(Math.min(duration || 45, currentTime + 5 / 29.97))}
+              className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-cyan-300"
+              title="Step forward 5 frames"
+            >
+              +5f
+            </button>
+          </div>
+
           {/* Time scrubber slider */}
           <div className="flex-1 flex items-center space-x-3">
             <span className="text-xs font-mono text-cyan-300 w-12 text-right">
-              {currentTime.toFixed(1)}s
+              {currentTime.toFixed(2)}s
             </span>
             <input
               type="range"
               min={0}
               max={duration || (analysis?.video_metadata.duration_s || 45)}
-              step={0.1}
+              step={0.033}
               value={currentTime}
               onChange={(e) => handleSeek(parseFloat(e.target.value))}
               className="flex-1 accent-cyan-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
             />
             <span className="text-xs font-mono text-slate-400 w-12">
-              {(duration || (analysis?.video_metadata.duration_s || 45)).toFixed(1)}s
+              {(duration || (analysis?.video_metadata.duration_s || 45)).toFixed(2)}s
             </span>
           </div>
+        </div>
+
+        {/* Caveats: Spatial Scale & Timing Synchronization (Requirements 5 & 9) */}
+        <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between text-[10px] font-mono text-slate-400 gap-2">
+          <span>
+            <strong>SPATIAL SCALE:</strong> ~30 px/cm calibrated to physical 7.6 cm flow duct inside MSG. Valid for central flow plane.
+          </span>
+          <span className="text-amber-400">
+            <strong>TIMING STATUS:</strong> Discrete pre/post chamber telemetry (not continuously synchronized with video frames).
+          </span>
         </div>
       </div>
 

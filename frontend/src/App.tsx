@@ -6,6 +6,7 @@ import { FlameStudio } from './components/FlameStudio';
 import { PreMissionAssessment } from './components/PreMissionAssessment';
 import { AstronautAssistant } from './components/AstronautAssistant';
 import { ResearchReports } from './components/ResearchReports';
+import { ValidationView } from './components/ValidationView';
 import { SystemStatus, Experiment, VideoInfo } from './types';
 
 export const App: React.FC = () => {
@@ -110,6 +111,10 @@ export const App: React.FC = () => {
                 experiments={experiments}
                 onSelectVideoForStudio={handleSelectExperimentForStudio}
               />
+            )}
+
+            {activeTab === 'validation' && (
+              <ValidationView />
             )}
           </>
         )}

@@ -39,9 +39,10 @@ export interface SystemStatus {
   status: string;
   scientific_foundation: string;
   facility: string;
+  timing_synchronization: string;
   models: {
     model_1_flame_cv: string;
-    model_2_combustion_predictor: string;
+    model_2_combustion_lookup: string;
     model_3_temporal_analyzer: string;
     model_4_multimodal_fusion: string;
     model_5_explainable_ai: string;
@@ -49,17 +50,17 @@ export interface SystemStatus {
   dataset_statistics: {
     total_nasa_experiments: number;
     video_enabled_tests: number;
+    total_raw_video_files: number;
+    unique_test_runs_with_video: number;
     precomputed_video_analyses: number;
     principal_investigators: string[];
     materials_tested: string[];
   };
   model_performance: {
-    total_training_samples: number;
-    cv_classification_accuracy: number;
-    cv_burn_duration_r2: number;
-    cv_spread_rate_r2: number;
-    feature_count: number;
-    classes: string[];
+    evaluation_method: string;
+    loo_outcome_accuracy: number;
+    flame_mask_iou: number;
+    notes: string;
   };
 }
 
@@ -124,65 +125,130 @@ export interface ScenarioInputData {
   thickness_mm: number;
   airflow_velocity_cm_s: number;
   oxygen_vol_pct: number;
-  width_cm: number;
-  flow_restrictor: number;
+  width_cm?: number;
+  flow_restrictor?: number;
 }
 
-export interface PredictionResult {
-  inputs: ScenarioInputData & { flow_geometry: string };
-  prediction: {
-    outcome_code: string;
+export interface LookupMatchRun {
+  test_id: string;
+  pi: string;
+  fuel_material_raw: string;
+  material_category: string;
+  measured_thickness_mm: number;
+  measured_airflow_cm_s: number;
+  measured_initial_o2_vol_pct: number;
+  measured_final_o2_vol_pct: number;
+  measured_o2_delta: number;
+  measured_co_delta_ppm: number;
+  measured_burn_duration_s: number;
+  measured_spread_rate_cm_s: number;
+  observed_outcome: string;
+  flight_observations: string;
+  paper_reference: string;
+  parameter_delta: {
+    delta_o2: number;
+    delta_airflow: number;
+    delta_thickness: number;
+  };
+  has_video: boolean;
+}
+
+export interface LookupResponse {
+  inputs: ScenarioInputData;
+  range_validation: {
+    within_tested_envelope: boolean;
+    range_warnings: string[];
+  };
+  lookup_result: {
+    primary_match_test_id: string;
+    observed_outcome: string;
     outcome_label: string;
-    confidence: number;
-    outcome_probabilities: Record<string, number>;
-    predicted_duration_s: number;
-    predicted_spread_rate_cm_s: number;
-    predicted_spread_rate_uncertainty: number;
-    predicted_co_delta_ppm: number;
-    predicted_co_uncertainty: number;
-    scientific_rationale: string;
+    measured_burn_duration_s: number;
+    measured_spread_rate_cm_s: number;
+    measured_co_delta_ppm: number;
+    factual_summary: string;
   };
-  explainability: {
-    top_influencing_variables: Array<{
-      feature: string;
-      importance: number;
-    }>;
-    closest_nasa_experiments: Array<{
-      test_id: string;
-      pi: string;
-      material: string;
-      actual_o2: number;
-      actual_airflow: number;
-      actual_outcome: string;
-      actual_duration_s: number;
-      observations: string;
-      similarity_score: number;
-    }>;
-    scientific_limitations: string;
-  };
+  matched_historical_runs: LookupMatchRun[];
+  scientific_limitations: string;
+}
+
+export interface ChatResponse {
+  response: string;
+  source_page?: string | null;
+  refused: boolean;
 }
 
 export interface ChatMessage {
   id: string;
   sender: 'user' | 'assistant';
   text: string;
-  grounding_sources?: string[];
+  source_page?: string | null;
   timestamp: string;
-  confidence?: number;
+  refused?: boolean;
 }
 
-export interface SensorAnalysisResult {
-  telemetry: {
-    o2_pct: number;
-    co_ppm: number;
-    co2_pct: number;
-    airflow_cm_s: number;
-    radiometer_mv: number;
+export interface EvidenceCardData {
+  test_id: string;
+  pi: string;
+  paper_page: string;
+  what_was_observed: string;
+  rule_flagged: string;
+  conditions: {
+    fuel_material: string;
+    thickness_mm: number;
+    ambient_o2_vol_pct: number;
+    airflow_velocity_cm_s: number;
+    flow_restrictor: number;
+    flow_geometry: string;
   };
-  hazard_severity: 'NORMAL' | 'CAUTION' | 'WARNING' | 'CRITICAL';
-  fire_event_probability: number;
-  assessment_confidence: number;
-  detected_deviations: string[];
-  action_recommendations: string[];
-  disclaimer: string;
+  measurements: {
+    burn_duration_s: number;
+    o2_delta_vol_pct: number;
+    co_delta_ppm: number;
+    observed_outcome: string;
+  };
+  what_it_supports: string;
+  scientific_limits: string;
+  next_step_for_researcher: string;
+}
+
+export interface ValidationData {
+  flame_segmentation_validation: {
+    total_benchmark_frames: number;
+    mean_intersection_over_union_iou: number;
+    mean_area_error_pct: number;
+    burned_in_text_masked: boolean;
+    benchmark_frames: Array<{
+      frame_id: string;
+      test_id: string;
+      gt_bbox: number[];
+      pred_bbox: number[];
+      iou: number;
+      error_pct: number;
+    }>;
+  };
+  lookup_engine_validation: {
+    total_runs_evaluated: number;
+    correct_outcome_matches: number;
+    leave_one_out_accuracy: number;
+    sample_failure_cases: Array<{
+      tested_id: string;
+      actual_outcome: string;
+      nearest_id: string;
+      nearest_outcome: string;
+      conditions: string;
+    }>;
+  };
+  documented_failure_case: {
+    test_id: string;
+    scenario: string;
+    what_happened: string;
+    lesson_for_researchers: string;
+  };
+  documented_refusal_case: {
+    query: string;
+    system_response: string;
+    confidence_badge: null;
+    refusal_reason: string;
+  };
 }
