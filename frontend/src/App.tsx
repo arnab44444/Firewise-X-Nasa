@@ -21,25 +21,55 @@ export const App: React.FC = () => {
 
   const fetchInitialData = async () => {
     try {
-      // 1. Status
-      const statusRes = await fetch('/api/status');
-      if (statusRes.ok) {
-        const sData: SystemStatus = await statusRes.json();
-        setStatus(sData);
+      // 1. Status (with static fallback for Vercel deployment)
+      try {
+        const statusRes = await fetch('/api/status');
+        if (statusRes.ok) {
+          const sData: SystemStatus = await statusRes.json();
+          setStatus(sData);
+        } else {
+          throw new Error('API offline, using static status');
+        }
+      } catch {
+        const fbStatus = await fetch('/data/status.json');
+        if (fbStatus.ok) {
+          const sData: SystemStatus = await fbStatus.json();
+          setStatus(sData);
+        }
       }
 
-      // 2. Experiments
-      const expRes = await fetch('/api/research/experiments');
-      if (expRes.ok) {
-        const eData = await expRes.json();
-        setExperiments(eData.experiments || []);
+      // 2. Experiments (with static fallback for Vercel deployment)
+      try {
+        const expRes = await fetch('/api/research/experiments');
+        if (expRes.ok) {
+          const eData = await expRes.json();
+          setExperiments(eData.experiments || []);
+        } else {
+          throw new Error('API offline, using static experiments');
+        }
+      } catch {
+        const fbExp = await fetch('/data/experiments.json');
+        if (fbExp.ok) {
+          const eList: Experiment[] = await fbExp.json();
+          setExperiments(eList || []);
+        }
       }
 
-      // 3. Videos
-      const vidRes = await fetch('/api/flame/videos');
-      if (vidRes.ok) {
-        const vData = await vidRes.json();
-        setVideos(vData.videos || []);
+      // 3. Videos (with static fallback for Vercel deployment)
+      try {
+        const vidRes = await fetch('/api/flame/videos');
+        if (vidRes.ok) {
+          const vData = await vidRes.json();
+          setVideos(vData.videos || []);
+        } else {
+          throw new Error('API offline, using static videos');
+        }
+      } catch {
+        const fbVid = await fetch('/data/videos.json');
+        if (fbVid.ok) {
+          const vData = await fbVid.json();
+          setVideos(vData.videos || []);
+        }
       }
     } catch (err) {
       console.error('Error initializing platform data:', err);

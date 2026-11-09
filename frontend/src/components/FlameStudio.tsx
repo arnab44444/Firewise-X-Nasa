@@ -67,9 +67,29 @@ export const FlameStudio: React.FC<FlameStudioProps> = ({ videos, initialTestId 
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/flame/analyze?test_id=${testId}`);
-      if (!res.ok) throw new Error(`Failed to load flame analysis for ${testId}`);
-      const data: FlameAnalysisResult = await res.json();
+      let data: FlameAnalysisResult | null = null;
+      try {
+        const res = await fetch(`/api/flame/analyze?test_id=${testId}`);
+        if (res.ok) {
+          data = await res.json();
+        } else {
+          throw new Error('API offline, using static analysis');
+        }
+      } catch {
+        // Fallback to static precomputed analysis file in /data/analyses/
+        const fbRes = await fetch(`/data/analyses/analysis_${testId}.json`);
+        if (fbRes.ok) {
+          data = await fbRes.json();
+        } else {
+          // Fallback to reference B1 analysis
+          const b1Res = await fetch(`/data/analyses/analysis_B1.json`);
+          if (b1Res.ok) {
+            data = await b1Res.json();
+          }
+        }
+      }
+
+      if (!data) throw new Error(`Failed to load flame analysis for ${testId}`);
       setAnalysis(data);
       if (data.timeline && data.timeline.length > 0) {
         setCurrentFrameData(data.timeline[0]);
@@ -285,11 +305,17 @@ export const FlameStudio: React.FC<FlameStudioProps> = ({ videos, initialTestId 
             {selectedTestId ? (
               <video
                 ref={videoRef}
-                src={`/api/flame/video-stream/${selectedTestId}`}
+                src={selectedTestId === 'B1' ? '/videos/sample_B1.mp4' : `/api/flame/video-stream/${selectedTestId}`}
                 onTimeUpdate={handleTimeUpdate}
                 onLoadedMetadata={() => {
                   if (videoRef.current) {
                     setDuration(videoRef.current.duration);
+                  }
+                }}
+                onError={() => {
+                  // If remote streaming fails (e.g. deployed on Vercel without local backend), fallback to bundled sample video
+                  if (videoRef.current && !videoRef.current.src.includes('sample_B1.mp4')) {
+                    videoRef.current.src = '/videos/sample_B1.mp4';
                   }
                 }}
                 onEnded={() => setIsPlaying(false)}

@@ -1,0 +1,45 @@
+{
+  "platform": "FIREWISE-X",
+  "status": "OPERATIONAL",
+  "scientific_foundation": "NASA PSI-25 (BASS-II)",
+  "facility": "ISS Microgravity Science Glovebox",
+  "timing_synchronization": "Discrete Pre/Post Chamber Telemetry (Not Synchronized Continuously with Video)",
+  "models": {
+    "model_1_flame_cv": "ACTIVE (Burned-in Text Masked)",
+    "model_2_combustion_lookup": "ACTIVE (BASS-II Flight Run Nearest Neighbor)",
+    "model_3_temporal_analyzer": "ACTIVE",
+    "model_4_multimodal_fusion": "ACTIVE",
+    "model_5_explainable_ai": "ACTIVE (NASA TM-20210011385 Evidence Citations)"
+  },
+  "dataset_statistics": {
+    "total_nasa_experiments": 129,
+    "video_enabled_tests": 52,
+    "total_raw_video_files": 84,
+    "unique_test_runs_with_video": 52,
+    "precomputed_video_analyses": 11,
+    "principal_investigators": [
+      "Bhattacharjee",
+      "Ferkul",
+      "Fernandez-Pello",
+      "Miller",
+      "Olson",
+      "T'ien"
+    ],
+    "materials_tested": [
+      "Japan Wax Candle",
+      "Nomex III",
+      "PMMA Black Rod",
+      "PMMA Clear Rod",
+      "PMMA Sphere",
+      "PMMA Thick Slab",
+      "PMMA Thin Film",
+      "SIBAL Fabric"
+    ]
+  },
+  "model_performance": {
+    "evaluation_method": "Leave-One-Run-Out Cross-Validation (LOO-CV)",
+    "loo_outcome_accuracy": 0.682,
+    "flame_mask_iou": 0.826,
+    "notes": "No synthetic data or fabricated scores. Grounded in 129 empirical flight runs."
+  }
+}

@@ -23,9 +23,21 @@ export const ValidationView: React.FC = () => {
 
   const fetchValidationData = async () => {
     try {
-      const res = await fetch('/api/validation');
-      if (res.ok) {
-        const valData: ValidationData = await res.json();
+      let valData: ValidationData | null = null;
+      try {
+        const res = await fetch('/api/validation');
+        if (res.ok) {
+          valData = await res.json();
+        } else {
+          throw new Error('API offline, using static validation data');
+        }
+      } catch {
+        const fbRes = await fetch('/data/validation.json');
+        if (fbRes.ok) {
+          valData = await fbRes.json();
+        }
+      }
+      if (valData) {
         setData(valData);
       }
     } catch (err) {
