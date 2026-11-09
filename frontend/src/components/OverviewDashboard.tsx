@@ -43,27 +43,28 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
         <div className="absolute bottom-0 left-1/3 -mb-20 w-80 h-80 rounded-full bg-orange-500/10 blur-3xl pointer-events-none"></div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
-          <div className="lg:col-span-7 space-y-6 text-left">
+          {/* Text & Paragraph Portion (Order 2 on mobile, Order 1 on Desktop lg+) */}
+          <div className="lg:col-span-7 order-2 lg:order-1 space-y-6 text-left">
             <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-950/70 border border-cyan-400/30 text-cyan-300 text-xs font-mono">
               <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
               <span>NASA PSI-25 RESEARCH PLATFORM</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-none">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight sm:leading-none">
               Understanding Fire <br />
               <span className="bg-gradient-to-r from-cyan-400 via-teal-300 to-orange-400 bg-clip-text text-transparent">
                 Beyond Earth.
               </span>
             </h1>
 
-            <p className="text-base sm:text-lg text-slate-300 max-w-2xl font-normal leading-relaxed">
+            <p className="text-sm sm:text-lg text-slate-300 max-w-2xl font-normal leading-relaxed">
               AI-powered microgravity combustion intelligence for safer space exploration. Built on flight experiments from the International Space Station’s Microgravity Science Glovebox.
             </p>
 
-            <div className="flex flex-wrap gap-4 pt-2">
+            <div className="flex flex-wrap gap-3 sm:gap-4 pt-2">
               <button
                 onClick={() => onNavigate('flame-studio')}
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold text-sm flex items-center space-x-2 shadow-lg shadow-cyan-500/25 transition-all cursor-pointer"
+                className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold text-xs sm:text-sm flex items-center space-x-2 shadow-lg shadow-cyan-500/25 transition-all cursor-pointer"
               >
                 <Flame className="w-4 h-4 text-orange-300" />
                 <span>Explore AI Flame Studio</span>
@@ -72,7 +73,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
 
               <button
                 onClick={() => onNavigate('assessment')}
-                className="px-6 py-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-cyan-200 border border-cyan-500/30 hover:border-cyan-400 font-semibold text-sm flex items-center space-x-2 transition-all cursor-pointer"
+                className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-cyan-200 border border-cyan-500/30 hover:border-cyan-400 font-semibold text-xs sm:text-sm flex items-center space-x-2 transition-all cursor-pointer"
               >
                 <Activity className="w-4 h-4 text-cyan-400" />
                 <span>Launch Pre-Mission Assessment</span>
@@ -80,31 +81,31 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
             </div>
 
             {/* Quick trust metrics */}
-            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-800/80">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-4 border-t border-slate-800/80">
               <div>
-                <p className="text-2xl font-bold font-mono text-cyan-400">129</p>
-                <p className="text-xs text-slate-400">NASA Flight Tests</p>
+                <p className="text-xl sm:text-2xl font-bold font-mono text-cyan-400">129</p>
+                <p className="text-[10px] sm:text-xs text-slate-400">NASA Flight Tests</p>
               </div>
               <div>
-                <p className="text-2xl font-bold font-mono text-orange-400">52</p>
-                <p className="text-xs text-slate-400">Unique Flight Test Videos (84 Files)</p>
+                <p className="text-xl sm:text-2xl font-bold font-mono text-orange-400">52</p>
+                <p className="text-[10px] sm:text-xs text-slate-400">Unique Flight Test Videos (84 Files)</p>
               </div>
               <div>
-                <p className="text-2xl font-bold font-mono text-emerald-400">LOO: 68.2%</p>
-                <p className="text-xs text-slate-400">Leave-One-Out Accuracy</p>
+                <p className="text-xl sm:text-2xl font-bold font-mono text-emerald-400">LOO: 68.2%</p>
+                <p className="text-[10px] sm:text-xs text-slate-400">Leave-One-Out Accuracy</p>
               </div>
             </div>
           </div>
 
-          {/* Cinematic Microgravity Flame Graphic */}
-          <div className="lg:col-span-5 flex justify-center items-center">
-            <div className="relative w-72 h-72 sm:w-84 sm:h-84 flex items-center justify-center">
+          {/* Cinematic Microgravity Flame Graphic (Order 1 on mobile, Order 2 on Desktop lg+) */}
+          <div className="lg:col-span-5 order-1 lg:order-2 flex justify-center items-center py-2 sm:py-0">
+            <div className="relative w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center">
               {/* Outer chamber ring */}
               <div className="absolute inset-0 rounded-full border border-cyan-500/20 animate-[spin_60s_linear_infinite]"></div>
               <div className="absolute inset-4 rounded-full border border-dashed border-cyan-500/30 animate-[spin_40s_linear_infinite_reverse]"></div>
               
-              {/* Spherical microgravity flame visualization */}
-              <div className="relative w-48 h-48 rounded-full bg-gradient-to-t from-blue-900/40 via-cyan-900/30 to-amber-900/20 backdrop-blur-md border border-cyan-400/40 flex items-center justify-center shadow-2xl shadow-cyan-500/20 overflow-hidden">
+              {/* Spherical microgravity flame visualization (Clean, text removed) */}
+              <div className="relative w-44 h-44 sm:w-52 sm:h-52 rounded-full bg-gradient-to-t from-blue-900/40 via-cyan-900/30 to-amber-900/20 backdrop-blur-md border border-cyan-400/40 flex items-center justify-center shadow-2xl shadow-cyan-500/20 overflow-hidden">
                 {/* Glow concentric layers */}
                 <div className="absolute w-36 h-36 rounded-full bg-blue-500/20 blur-xl"></div>
                 <div className="absolute w-28 h-28 rounded-full bg-cyan-400/30 blur-lg"></div>
@@ -112,7 +113,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
                 <div className="absolute w-12 h-12 rounded-full bg-amber-200/70 blur-sm"></div>
 
                 {/* SVG Spherical Flame Representation */}
-                <svg className="w-32 h-32 relative z-10 animate-flame" viewBox="0 0 100 100" fill="none">
+                <svg className="w-28 h-28 sm:w-36 sm:h-36 relative z-10 animate-flame" viewBox="0 0 100 100" fill="none">
                   {/* Chemiluminescent blue halo */}
                   <circle cx="50" cy="50" r="42" fill="none" stroke="#00f2fe" strokeWidth="1.5" strokeDasharray="4 2" opacity="0.7" />
                   {/* Outer soot boundary */}
@@ -135,11 +136,6 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
                     </radialGradient>
                   </defs>
                 </svg>
-
-                {/* Microgravity HUD annotation */}
-                <div className="absolute bottom-2 font-mono text-[9px] text-cyan-300 tracking-wider bg-slate-950/80 px-2 py-0.5 rounded border border-cyan-500/30">
-                  g ≈ 10⁻⁴ g | Quiescent Spherical
-                </div>
               </div>
             </div>
           </div>
